@@ -3,7 +3,9 @@ import {
   History,
   Users,
   Check,
-  X
+  X,
+  Search,
+  CalendarDays
 } from "lucide-react"
 
 const Students = [
@@ -152,6 +154,46 @@ export default function Attendance() {
           </p>
         </div>
 
+      </div>
+
+      {/*Attendance section */}
+      <div>
+
+        <div>
+          <h2 className="text-lg font-semibold text-gray-900">Today's Attendance</h2>
+        </div>
+
+        <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          {/*student Search*/}
+          <div className="relative w-full sm:w-80">
+            <Search
+              size={18}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+            />
+
+            <input
+              type="text"
+              placeholder="Search students..."
+              // value={searchTerm}
+              // onChange={(e) => setSearchTerm(e.target.value)}
+              className="h-10 w-full rounded-md border border-gray-300 bg-white pl-10 pr-3 text-sm text-gray-700 outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+            />
+          </div>
+
+          {/* Date */}
+          <div className="flex h-10 items-center gap-3 rounded-md border border-gray-300 px-3 text-sm text-gray-700">
+            <CalendarDays size={18} className="text-gray-500" />
+
+            <span>
+              {CurrentDate.toLocaleDateString('en-GB', {
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric',
+              })}
+            </span>
+
+          </div>
+        </div>
       </div>
 
     </div>

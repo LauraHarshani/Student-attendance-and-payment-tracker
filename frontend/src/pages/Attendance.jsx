@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import {
   History,
   Users,
@@ -24,37 +24,55 @@ const AllStudents = [
   {
     id: 3,
     name: 'Nimal Perera',
-    studentId: 'COM05',
+    studentId: 'COM03',
     status: 'Absent',
   },
   {
     id: 4,
     name: 'Roshan Fernando',
-    studentId: 'COM06',
+    studentId: 'COM04',
     status: 'Absent',
   },
   {
     id: 5,
     name: 'Sahan Wijesinghe',
-    studentId: 'COM07',
+    studentId: 'COM05',
     status: 'Absent',
   },
   {
     id: 6,
     name: 'Sathish Peduru',
-    studentId: 'COM08',
+    studentId: 'COM06',
     status: 'Absent',
   },
   {
     id: 7,
     name: 'Nirmal Peduru',
+    studentId: 'COM07',
+    status: 'Absent',
+  },
+  {
+    id: 9,
+    name: 'Harshani Fernando',
     studentId: 'COM09',
     status: 'Absent',
   },
   {
-    id: 8,
+    id: 10,
     name: 'Harshani Fernando',
     studentId: 'COM10',
+    status: 'Absent',
+  },
+  {
+    id: 11,
+    name: 'Harshani Fernando',
+    studentId: 'COM11',
+    status: 'Absent',
+  },
+  {
+    id: 12,
+    name: 'Harshani Fernando',
+    studentId: 'COM12',
     status: 'Absent',
   },
 ];
@@ -64,6 +82,9 @@ export default function Attendance() {
   const [students, setStudents] = useState(AllStudents);
   const [CurrentDate, setCurrentDate] = useState(new Date());
   const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const studentsPerPage = 10;
 
   //live date
 
@@ -84,12 +105,23 @@ export default function Attendance() {
       )
     );
   };
-
+  //filter search bar
   const filteredStudents = students.filter((student) =>
     `${student.name} ${student.studentId}`
       .toLowerCase()
       .includes(searchTerm.toLowerCase())
   );
+
+  //pagination
+  const totalPages = Math.ceil(filteredStudents.length / studentsPerPage);
+
+  const indexOfLastStudent = currentPage * studentsPerPage;
+  const indexOfFirstStudent = indexOfLastStudent - studentsPerPage;
+
+  const currentStudents = filteredStudents.slice(
+  indexOfFirstStudent,
+  indexOfLastStudent
+);
 
   //Total students count
   const totalStudents = students.length;
@@ -204,7 +236,7 @@ export default function Attendance() {
               type="text"
               placeholder="Search students..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => {setSearchTerm(e.target.value); setCurrentPage(1); }}
               className="h-10 w-full rounded-md border border-gray-300 bg-white pl-10 pr-3 text-sm text-gray-700 outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
             />
           </div>
@@ -213,13 +245,12 @@ export default function Attendance() {
           <div className="flex h-10 items-center gap-3 rounded-md border border-gray-300 px-3 text-sm text-gray-700">
             <CalendarDays size={18} className="text-gray-500" />
 
-            <span>
-              {CurrentDate.toLocaleDateString('en-GB', {
-                day: 'numeric',
-                month: 'long',
-                year: 'numeric',
-              })}
-            </span>
+            <input
+              type="date"
+              value={CurrentDate.toISOString().split('T')[0]}
+              onChange={(e) => setCurrentDate(new Date(e.target.value))}
+              className="bg-transparent text-sm text-gray-700 outline-none"
+            />
 
           </div>
         </div>
@@ -245,7 +276,7 @@ export default function Attendance() {
             </thead>
 
             <tbody>
-              {filteredStudents.map((student) => (
+              {currentStudents.map((student) => (
 
                 <tr
                   key={student.id}
@@ -302,6 +333,48 @@ export default function Attendance() {
               No students found.
             </div>
           )}
+        </div>
+
+        {/* Pagination */}
+        <div className="flex justify-end items-center mt-6 pt-4 border-t border-gray-200 gap-2">
+
+          {/* Previous */}
+          <button
+            onClick={() => setCurrentPage((page) => Math.max(page - 1, 1))}
+            disabled={currentPage === 1}
+            className="px-3 py-1.5 border border-gray-300 rounded bg-white text-gray-500 hover:bg-gray-100 transition-colors"
+          >
+            &lt;
+          </button>
+
+          {/* Page Numbers */}
+          {Array.from({ length: totalPages }, (_, index) => index + 1).map(
+            (page) => (
+              <button
+                key={page}
+                onClick={() => setCurrentPage(page)}
+                className={`px-3.5 py-1.5 rounded font-medium transition-colors ${
+                  currentPage === page
+                    ? 'bg-[#4F46E5] text-white font-bold shadow-sm'
+                    : 'border border-gray-300 bg-white text-gray-600 hover:bg-gray-100'
+                }`}
+              >
+                {page}
+              </button>
+            )
+          )}
+
+          {/* Next */}
+          <button
+            onClick={() =>
+              setCurrentPage((page) => Math.min(page + 1, totalPages))
+            }
+            disabled={currentPage === totalPages || totalPages === 0}
+            className="px-3 py-1.5 border border-gray-300 rounded bg-white text-gray-500 hover:bg-gray-100 transition-colors"
+          >
+            &gt;
+          </button>
+
         </div>
 
         {/* Save Button */}

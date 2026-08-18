@@ -1,31 +1,40 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Mail, Lock, Eye } from 'lucide-react';
+import { useNavigate, Link } from 'react-router-dom'; // Newly added Link import
+import { Mail, Lock, Eye, EyeOff } from 'lucide-react'; // Added EyeOff for the hide password icon
 import loginImage from '../assets/login-bg.jpeg'; 
 
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  
+  // State to handle password visibility toggle
+  const [showPassword, setShowPassword] = useState(false); 
+  
   const navigate = useNavigate();
 
   const handleLogin = (e) => {
     e.preventDefault();
     
-    // Email එකෙන් නම වෙන් කරලා මුල් අකුර ලොකු කරනවා (උදා: kamal@gmail.com -> Kamal)
+    // Extract name from email and capitalize the first letter (e.g., kamal@gmail.com -> Kamal)
     let namePart = email.split('@')[0];
     let displayName = namePart.charAt(0).toUpperCase() + namePart.slice(1);
     
-    // ඒ නම බ්‍රව්සර් එකේ ලෝකල් ස්ටෝරේජ් එකේ සේව් කරනවා
+    // Save the extracted name in the browser's local storage
     localStorage.setItem('userName', displayName);
     
     navigate('/');
+  };
+
+  // Function to toggle the password visibility state
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
   };
 
   return (
     
     <div className="flex h-screen w-screen items-center justify-center bg-[#1e1e1e] p-4 lg:p-8">
       
-      {/* සුදු පාට Frame එක  */}
+      {/* White background frame */}
       <div className="flex w-full max-w-[1300px] h-full max-h-[850px] bg-white p-4 shadow-2xl rounded-2xl">
         
         {/* Left Side - Brand Section */}
@@ -85,16 +94,23 @@ export default function Login() {
                   <span className="absolute inset-y-0 left-0 flex items-center pl-4 text-gray-700">
                     <Lock size={20} />
                   </span>
+                  
+                  {/* Dynamically change input type based on showPassword state */}
                   <input
-                    type="password"
+                    type={showPassword ? "text" : "password"} 
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Enter your password"
                     className="w-full pl-12 pr-12 py-3.5 bg-[#E5E7EB] border border-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0A1128] text-gray-900 text-base"
                   />
-                  <span className="absolute inset-y-0 right-0 flex items-center pr-4 text-gray-700 cursor-pointer">
-                    <Eye size={20} />
+                  
+                  {/* Clickable icon to toggle visibility */}
+                  <span 
+                    className="absolute inset-y-0 right-0 flex items-center pr-4 text-gray-700 cursor-pointer hover:text-gray-900 transition-colors"
+                    onClick={togglePasswordVisibility}
+                  >
+                    {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                   </span>
                 </div>
               </div>
@@ -104,9 +120,11 @@ export default function Login() {
                   <input type="checkbox" className="w-5 h-5 rounded border-gray-400 text-blue-600 focus:ring-blue-500" />
                   <span className="text-gray-800">Remember me</span>
                 </label>
-                <a href="#forgot" onClick={(e) => e.preventDefault()} className="text-blue-600 hover:underline font-medium">
+                
+                {/* Newly added <Link> instead of the previous <a> tag */}
+                <Link to="/forgot-password" className="text-blue-600 hover:underline font-medium">
                   Forgot Password?
-                </a>
+                </Link>
               </div>
 
               <button

@@ -80,6 +80,63 @@ export default function AttendanceHistory() {
                     Search
                 </button>
             </div>
+
+            {/* Summary Cards */}
+            <div className='grid grid-cols-1 gap-5 md:grid-cols-3'>
+
+                {/* Total Records */}
+                <div className='rounded-2xl bg-blue-100 p-5'>
+                    <div className="flex items-center gap-3">
+                        <Users
+                            size={22}
+                            className="text-blue-950"
+                        />
+                        <span className='text-sm font-semibold text-blue-950'>Total Data</span>
+                    </div>
+                    <p className="mt-5 text-2xl font-bold text-blue-950">
+                        {/* {totalRecords} */}
+                    </p>
+                    <p className="mt-2 text-xs text-blue-950">
+                        Total records
+                    </p>
+                </div>
+
+                {/*Attendance percentage*/}
+                <div className='rounded-2xl bg-green-100 p-5'>
+                    <div className='flex items-center gap-3'>
+                        <Check
+                            size={22}
+                            className='text-green-900'
+                        />
+                        <span className='text-sm font-semibold text-green-900'>Attendance</span>
+                    </div>
+                    <p className="mt-5 text-2xl font-bold text-green-900">
+                        {/* {attendancePercentage}% */}
+                    </p>
+                    <p className="mt-2 text-xs text-green-900">
+                        Average attendance
+                    </p>
+                </div>
+
+                {/*Absent percentage*/}
+                <div className='rounded-2xl bg-red-100 p-5'>
+                    <div className='flex items-center gap-3'>
+                        <X
+                            size={22}
+                            className='text-red-900'
+                        />
+                        <span className='text-sm font-semibold text-red-900'>Absent</span>
+                    </div>
+
+                    <p className="mt-5 text-2xl font-bold text-red-900">
+                        {/* {absencePercentage}% */}
+                    </p>
+
+                    <p className="mt-2 text-xs text-red-900">
+                        Average absence
+                    </p>
+                </div>
+            </div>
         </div>
     )
 }

@@ -96,15 +96,18 @@ export default function Attendance() {
   })
 
   // Mark student present
-  const markAttendance = (studentId) => {
-    setStudents((currentStudents) =>
-      currentStudents.map((student) =>
-        student.id === studentId
-          ? { ...student, status: 'Present' }
-          : student
-      )
-    );
-  };
+  const toggleAttendance = (studentId) => {
+  setStudents((currentStudents) =>
+    currentStudents.map((student) =>
+      student.id === studentId
+        ? {
+            ...student,
+            status: student.status === 'Present' ? 'Absent' : 'Present',
+          }
+        : student
+    )
+  );
+};
   //filter search bar
   const filteredStudents = students.filter((student) =>
     `${student.name} ${student.studentId}`
@@ -241,7 +244,7 @@ export default function Attendance() {
             />
           </div>
 
-          {/* Date */}
+          {/* Date selector*/}
           <div className="flex h-10 items-center gap-3 rounded-md border border-gray-300 px-3 text-sm text-gray-700">
             <CalendarDays size={18} className="text-gray-500" />
 
@@ -309,15 +312,14 @@ export default function Attendance() {
 
                     <button
                       type="button"
-                      onClick={() => markAttendance(student.id)}
-                      disabled={student.status === 'Present'}
+                      onClick={() => toggleAttendance(student.id)}
                       className={`rounded-md px-4 py-1.5 text-xs font-medium text-white transition ${
                         student.status === 'Present'
-                          ? 'cursor-not-allowed bg-gray-300'
-                          : 'bg-blue-600 hover:bg-blue-700'
+                          ? 'bg-red-700 hover:bg-red-600'
+                          : 'bg-blue-800 hover:bg-blue-700'
                       }`}
                     >
-                      {student.status === 'Present' ? 'Marked' : 'Mark'}
+                      {student.status === 'Present' ? 'Mark' : 'Mark'}
                     </button>
 
                   </td>
@@ -381,7 +383,7 @@ export default function Attendance() {
         <div className="mt-5">
           <button
             type="button"
-            className="rounded-md bg-blue-600 px-5 py-2 text-sm font-medium text-white transition hover:bg-blue-700"
+            className="rounded-md bg-blue-800 px-5 py-2 text-sm font-medium text-white transition hover:bg-blue-700"
           >
             Save Attendance
           </button>

@@ -152,7 +152,30 @@ export default function AttendanceHistory() {
                 />
             </div>
 
-            
+            {/*Table*/}
+            <div className='overflow-x-auto'>
+                <table className='w-full border-collapse text-sm'>
+                    <thead>
+                        <tr className='border-y border-gray-300 bg-gray-50 text-left'>
+                            <th className='px-5 py-3 font-semibold text-gray-800'>
+                                Student Name
+                            </th>
+                            <th className='px-5 py-3 font-semibold text-gray-800'>
+                                Student ID
+                            </th>
+                            <th className='px-5 py-3 font-semibold text-gray-800'>
+                                Payment Date
+                            </th>
+                            <th className='px-5 py-3 font-semibold text-gray-800'>
+                                Status
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        
+                    </tbody>
+                </table>
+            </div>
         </div>
     )
 }

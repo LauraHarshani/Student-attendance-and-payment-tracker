@@ -80,7 +80,7 @@ const AllStudents = [
 export default function Attendance() {
 
   const [students, setStudents] = useState(AllStudents);
-  const [CurrentDate, setCurrentDate] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState(new Date());
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -88,7 +88,7 @@ export default function Attendance() {
 
   //live date
 
-  const FormatDate = CurrentDate.toLocaleDateString('us-en', {
+  const FormatDate = selectedDate.toLocaleDateString('us-en', {
     weekday: 'long',
     day: 'numeric',
     month: 'long',
@@ -114,6 +114,34 @@ export default function Attendance() {
       .toLowerCase()
       .includes(searchTerm.toLowerCase())
   );
+
+  //save attendance
+  const saveAttendance = () => {
+  const existingRecords =
+    JSON.parse(localStorage.getItem('attendanceHistory')) || [];
+
+  const newRecords = students.map((student) => ({
+    date: selectedDate.toISOString().split('T')[0],
+    studentId: student.studentId,
+    status: student.status,
+  }));
+
+  
+  const updatedRecords = [
+    ...existingRecords.filter(
+      (record) =>
+        record.date !== selectedDate.toISOString().split('T')[0]
+    ),
+    ...newRecords,
+  ];
+
+  localStorage.setItem(
+    'attendanceHistory',
+    JSON.stringify(updatedRecords)
+  );
+
+  alert('Attendance saved successfully!');
+};
 
   //pagination
   const totalPages = Math.ceil(filteredStudents.length / studentsPerPage);
@@ -250,8 +278,8 @@ export default function Attendance() {
 
             <input
               type="date"
-              value={CurrentDate.toISOString().split('T')[0]}
-              onChange={(e) => setCurrentDate(new Date(e.target.value))}
+              value={selectedDate.toISOString().split('T')[0]}
+              onChange={(e) => setSelectedDate(new Date(e.target.value))}
               className="bg-transparent text-sm text-gray-700 outline-none"
             />
 
@@ -383,6 +411,7 @@ export default function Attendance() {
         <div className="mt-5">
           <button
             type="button"
+            onClick={saveAttendance}
             className="rounded-md bg-blue-800 px-5 py-2 text-sm font-medium text-white transition hover:bg-blue-700"
           >
             Save Attendance

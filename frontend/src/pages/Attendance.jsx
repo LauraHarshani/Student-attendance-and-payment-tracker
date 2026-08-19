@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   History,
   Users,
@@ -165,6 +166,8 @@ export default function Attendance() {
   //Absent students
   const absentStudents = totalStudents - presentStudents;
 
+  const navigate = useNavigate();
+
   return(
     <div className="space-y-6">
 
@@ -175,7 +178,10 @@ export default function Attendance() {
           <p className="text-gray-600 text-sm">Manage today's student attendance</p>
         </div>
         <div>
-          <button type="button" className="flex items-center gap-2 border rounded-md border-blue-600 px-4 py-2 text-sm font-medium text-blue-600 cursor-pointer transition hover:bg-blue-50"
+          <button
+            type="button"
+            className="flex items-center gap-2 border rounded-md border-blue-600 px-4 py-2 text-sm font-medium text-blue-600 cursor-pointer transition hover:bg-blue-50"
+            onClick={() => navigate('/attendance/history')}
           >
             <History size={18} />
             History

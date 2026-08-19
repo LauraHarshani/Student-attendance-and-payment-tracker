@@ -9,6 +9,7 @@ import Attendance from './pages/Attendance';
 import Payments from './pages/Payments';
 import AdminProfile from './pages/AdminProfile';
 import Login from './pages/Login';
+import AttendanceHistory from './pages/AttendanceHistory';
 
 export default function App() {
   return (
@@ -24,6 +25,7 @@ export default function App() {
           <Route path="students/add" element={<AddStudent />} />
           <Route path="students/profile/:id" element={<StudentProfile />} />
           <Route path="attendance" element={<Attendance />} />
+          <Route path="attendance/history" element={<AttendanceHistory/>}/>
           <Route path="payments" element={<Payments />} />
           <Route path="admin-profile" element={<AdminProfile />} />
         </Route>

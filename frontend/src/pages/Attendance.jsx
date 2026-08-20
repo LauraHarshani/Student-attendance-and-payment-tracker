@@ -6,7 +6,6 @@ import {
   Check,
   X,
   Search,
-  CalendarDays
 } from "lucide-react"
 
 const ATTENDANCE_KEY = 'attendanceHistory';
@@ -278,7 +277,6 @@ export default function Attendance() {
 
           {/* Date selector*/}
           <div className="flex h-10 items-center gap-3 rounded-md border border-gray-300 px-3 text-sm text-gray-700">
-            <CalendarDays size={18} className="text-gray-500" />
 
             <input
               type="date"

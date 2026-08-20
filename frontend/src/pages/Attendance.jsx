@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, {useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   History,
@@ -9,92 +9,90 @@ import {
   CalendarDays
 } from "lucide-react"
 
-const AllStudents = [
-  {
-    id: 1,
-    name: 'Minindu Rajapaksha',
-    studentId: 'COM01',
-    status: 'Absent',
-  },
-  {
-    id: 2,
-    name: 'Pasindu Gunasekara',
-    studentId: 'COM02',
-    status: 'Absent',
-  },
-  {
-    id: 3,
-    name: 'Nimal Perera',
-    studentId: 'COM03',
-    status: 'Absent',
-  },
-  {
-    id: 4,
-    name: 'Roshan Fernando',
-    studentId: 'COM04',
-    status: 'Absent',
-  },
-  {
-    id: 5,
-    name: 'Sahan Wijesinghe',
-    studentId: 'COM05',
-    status: 'Absent',
-  },
-  {
-    id: 6,
-    name: 'Sathish Peduru',
-    studentId: 'COM06',
-    status: 'Absent',
-  },
-  {
-    id: 7,
-    name: 'Nirmal Peduru',
-    studentId: 'COM07',
-    status: 'Absent',
-  },
-  {
-    id: 9,
-    name: 'Harshani Fernando',
-    studentId: 'COM09',
-    status: 'Absent',
-  },
-  {
-    id: 10,
-    name: 'Harshani Fernando',
-    studentId: 'COM10',
-    status: 'Absent',
-  },
-  {
-    id: 11,
-    name: 'Harshani Fernando',
-    studentId: 'COM11',
-    status: 'Absent',
-  },
-  {
-    id: 12,
-    name: 'Harshani Fernando',
-    studentId: 'COM12',
-    status: 'Absent',
-  },
-];
+const ATTENDANCE_KEY = 'attendanceHistory';
+const STUDENT_KEY = 'studentList';
 
 export default function Attendance() {
 
-  const [students, setStudents] = useState(AllStudents);
+  const navigate = useNavigate();
+
+  const [students, setStudents] = useState([]);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
 
   const studentsPerPage = 10;
 
-  //live date
+  // Format date to store
 
-  const FormatDate = selectedDate.toLocaleDateString('us-en', {
+  const getDateKey = (date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+
+    return `${year}-${month}-${day}`;
+  };
+
+  //live date display
+
+  const FormatDate = selectedDate.toLocaleDateString('en-US', {
     weekday: 'long',
     day: 'numeric',
     month: 'long',
     year: 'numeric',
   })
+
+  // Load students from students.jsx
+  
+  const loadStudentsForDate = (date) => {
+
+    const savedStudents = JSON.parse(localStorage.getItem(STUDENT_KEY)) || [];
+
+    const attendanceRecords = JSON.parse(localStorage.getItem(ATTENDANCE_KEY)) || [];
+
+    const dateKey = getDateKey(date);
+
+    // Get attendance records for selected date
+    const dateRecords = attendanceRecords.filter(
+      (record) => record.date === dateKey
+    );
+
+    // Create a quick lookup
+    const attendanceMap = {};
+
+    dateRecords.forEach((record) => {
+      attendanceMap[record.studentId] = record.status;
+    });
+
+    // Add attendance status to every student
+    const studentsWithStatus = savedStudents.map((student) => ({
+      ...student,
+      status: attendanceMap[student.id] || 'Absent'
+    }));
+
+    setStudents(studentsWithStatus);
+  };
+
+  // Load students when page opens
+  useEffect(() => {
+    loadStudentsForDate(selectedDate);
+  }, []);
+
+
+  // Change date
+  const handleDateChange = (e) => {
+
+    const [year, month, day] = e.target.value
+      .split('-')
+      .map(Number);
+
+    const newDate = new Date(year, month - 1, day);
+
+    setSelectedDate(newDate);
+    setCurrentPage(1);
+
+    loadStudentsForDate(newDate);
+  };
 
   // Mark student present
   const toggleAttendance = (studentId) => {
@@ -111,7 +109,7 @@ export default function Attendance() {
 };
   //filter search bar
   const filteredStudents = students.filter((student) =>
-    `${student.name} ${student.studentId}`
+    `${student.name} ${student.id}`
       .toLowerCase()
       .includes(searchTerm.toLowerCase())
   );
@@ -119,25 +117,27 @@ export default function Attendance() {
   //save attendance
   const saveAttendance = () => {
   const existingRecords =
-    JSON.parse(localStorage.getItem('attendanceHistory')) || [];
+    JSON.parse(localStorage.getItem(ATTENDANCE_KEY)) || [];
+  
+  const dateKey = getDateKey(selectedDate);
 
   const newRecords = students.map((student) => ({
-    date: selectedDate.toISOString().split('T')[0],
-    studentId: student.studentId,
+    date: dateKey,
+    studentId: student.id,
     status: student.status,
   }));
 
-  
+  // Remove old records for this date
   const updatedRecords = [
     ...existingRecords.filter(
       (record) =>
-        record.date !== selectedDate.toISOString().split('T')[0]
+        record.date !== dateKey
     ),
     ...newRecords,
   ];
 
   localStorage.setItem(
-    'attendanceHistory',
+    ATTENDANCE_KEY,
     JSON.stringify(updatedRecords)
   );
 
@@ -165,8 +165,6 @@ export default function Attendance() {
 
   //Absent students
   const absentStudents = totalStudents - presentStudents;
-
-  const navigate = useNavigate();
 
   return(
     <div className="space-y-6">
@@ -284,8 +282,8 @@ export default function Attendance() {
 
             <input
               type="date"
-              value={selectedDate.toISOString().split('T')[0]}
-              onChange={(e) => setSelectedDate(new Date(e.target.value))}
+              value={getDateKey(selectedDate)}
+              onChange={handleDateChange}
               className="bg-transparent text-sm text-gray-700 outline-none"
             />
 
@@ -298,7 +296,7 @@ export default function Attendance() {
             <thead>
               <tr className="border-y border-gray-200 bg-gray-50 text-left">
                 <th className="px-4 py-3 font-semibold text-gray-700">
-                  Student's Name
+                  Student Name
                 </th>
                 <th className="px-4 py-3 font-semibold text-gray-700">
                   Student ID
@@ -325,7 +323,7 @@ export default function Attendance() {
                   </td>
 
                   <td className="px-4 py-3 text-gray-600">
-                    {student.studentId}
+                    {student.id}
                   </td>
 
                   <td className="px-4 py-3">

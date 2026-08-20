@@ -132,6 +132,100 @@ export default function AttendanceHistory() {
         }
         );
     };
+    const handleReport = () => {
+        if (filteredRecords.length === 0) {
+            alert('No attendance records available for the report.');
+            return;
+        }
+
+        // Report title
+        const title = ['ATTENDANCE REPORT'];
+
+
+        // Date range
+        let dateRange = '';
+
+        if (!fromDate && !toDate) {
+            dateRange = 'All Dates';
+        } 
+        else if (fromDate && toDate) {
+            dateRange = `From ${formatDate(fromDate)} To ${formatDate(toDate)}`;
+        } 
+        else if (fromDate) {
+            dateRange = `From ${formatDate(fromDate)} To All`;
+        } 
+        else if (toDate) {
+            dateRange = `All Dates To ${formatDate(toDate)}`;
+        }
+
+        // Summary
+        const summary = [
+            ['Date Range', dateRange],
+            ['Total Data', totalRecords],
+            ['Attendance Percentage', `${attendancePercentage}%`],
+            ['Absence Percentage', `${absencePercentage}%`],
+        ];
+
+        // Table headers
+        const headers = [
+            "Student's Name",
+            "Student's ID",
+            "Date",
+            "Status"
+        ];
+
+        // Table data
+        const rows = filteredRecords.map((record) => [
+            getStudentName(record.studentId),
+            record.studentId,
+
+            formatDate(record.date),
+
+            record.status
+        ]);
+
+        // Create CSV
+        const csvRows = [
+            title,
+            [],
+            ...summary,
+            [],
+            headers,
+            ...rows
+        ];
+
+        const csvContent = csvRows
+            .map((row) =>
+            row
+                .map((value) =>
+                `"${String(value ?? '').replace(/"/g, '""')}"`
+                )
+                .join(',')
+            )
+            .join('\n');
+
+        // Create file
+        const blob = new Blob(
+            ['\uFEFF' + csvContent],
+            {
+            type: 'text/csv;charset=utf-8;'
+            }
+        );
+
+        const url = URL.createObjectURL(blob);
+
+        const link = document.createElement('a');
+
+        link.href = url;
+        link.download = 'attendance-report.csv';
+
+        document.body.appendChild(link);
+        link.click();
+
+        document.body.removeChild(link);
+
+        URL.revokeObjectURL(url);
+        };
 
     return (
         <div className='space-y-8'>
@@ -339,11 +433,11 @@ export default function AttendanceHistory() {
 
                 {/* Report */}
                 <button
-                // onClick={handleReport}
-                className="flex w-fit items-center gap-2 rounded-lg border border-blue-600 px-4 py-2 text-sm font-medium text-blue-600 hover:bg-blue-50 transition-colors"
+                    onClick={handleReport}
+                    className="flex w-fit items-center gap-2 rounded-lg border border-blue-600 px-4 py-2 text-sm font-medium text-blue-600 hover:bg-blue-50 transition-colors"
                 >
-                <Download size={18} />
-                Report
+                    <Download size={18} />
+                    Report
                 </button>
 
                 {/* Pagination */}
@@ -385,15 +479,15 @@ export default function AttendanceHistory() {
 
                     {/* Next */}
                     <button
-                    onClick={() =>
-                        setCurrentPage((page) =>
-                        Math.min(page + 1, totalPages)
-                        )
-                    }
-                    disabled={currentPage === totalPages}
-                    className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-gray-500 hover:bg-gray-100"
+                        onClick={() =>
+                            setCurrentPage((page) =>
+                            Math.min(page + 1, totalPages)
+                            )
+                        }
+                        disabled={currentPage === totalPages}
+                        className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-gray-500 hover:bg-gray-100"
                     >
-                    ›
+                        ›
                     </button>
 
                 </div>

@@ -31,7 +31,7 @@ export default function AttendanceHistory() {
     const [searchTerm, setSearchTerm] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
 
-    const recordsPerPage = 5;
+    const recordsPerPage = 8;
 
     const students = JSON.parse(
     localStorage.getItem('studentList') || '[]'

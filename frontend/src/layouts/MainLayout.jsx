@@ -1,4 +1,3 @@
-import React from 'react';
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { LayoutDashboard, Users, Calendar, CreditCard, User, LogOut } from 'lucide-react';
 import logoImage from '../assets/logo.jpeg'; 

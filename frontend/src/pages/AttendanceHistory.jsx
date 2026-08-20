@@ -86,14 +86,14 @@ export default function AttendanceHistory() {
     ).length;
 
     const attendancePercentage =
-    totalRecords > 0
-      ? Math.round((presentRecords / totalRecords) * 100)
-      : 0;
+        totalRecords > 0
+        ? Math.round((presentRecords / totalRecords) * 100)
+        : 0;
 
     const absencePercentage =
-    totalRecords > 0
-      ? Math.round((absentRecords / totalRecords) * 100)
-      : 0;
+        totalRecords > 0
+        ? Math.round((absentRecords / totalRecords) * 100)
+        : 0;
 
     //pagination
     const totalPages = Math.ceil(
@@ -108,11 +108,6 @@ export default function AttendanceHistory() {
         indexOfFirstRecord,
         indexOfLastRecord
     );
-
-    // Search button
-    const handleSearch = () => {
-        setCurrentPage(1);
-    };
 
     // Student search
     const handleStudentSearch = (e) => {
@@ -273,12 +268,6 @@ export default function AttendanceHistory() {
                     className="h-10 w-48 rounded-lg border border-gray-300 bg-white pl-5 pr-3 text-sm text-gray-800 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                 />
             
-                <button
-                    // onClick={handleSearch}
-                    className="h-10 rounded-lg bg-blue-600 px-6 text-sm font-medium text-white hover:bg-blue-700 transition-colors"
-                >
-                    Search
-                </button>
             </div>
 
             {/* Summary Cards */}

@@ -6,13 +6,12 @@ import Students from './pages/Students';
 import AddStudent from './pages/AddStudent';
 import StudentProfile from './pages/StudentProfile';
 import Attendance from './pages/Attendance';
+import AttendanceHistory from './pages/AttendanceHistory';
 import Payments from './pages/Payments';
 import AdminProfile from './pages/AdminProfile';
 import Login from './pages/Login';
-import AttendanceHistory from './pages/AttendanceHistory';
-import PaymentHistory from './pages/PaymentHistory';
 
-export default function App() {
+function App() {
   return (
     <Router>
       <Routes>
@@ -29,9 +28,10 @@ export default function App() {
           <Route path="attendance/history" element={<AttendanceHistory/>}/>
           <Route path="payments" element={<Payments />} />
           <Route path="admin-profile" element={<AdminProfile />} />
-          <Route path="payment/history" element={<PaymentHistory/>}/>
         </Route>
       </Routes>
     </Router>
   );
 }
+
+export default App;

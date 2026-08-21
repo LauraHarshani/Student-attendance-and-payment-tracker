@@ -10,6 +10,7 @@ import AttendanceHistory from './pages/AttendanceHistory';
 import Payments from './pages/Payments';
 import AdminProfile from './pages/AdminProfile';
 import Login from './pages/Login';
+import PaymentHistory from './pages/PaymentHistory';
 
 function App() {
   return (
@@ -28,6 +29,7 @@ function App() {
           <Route path="attendance/history" element={<AttendanceHistory/>}/>
           <Route path="payments" element={<Payments />} />
           <Route path="admin-profile" element={<AdminProfile />} />
+          <Route path="payment/history" element={<PaymentHistory />} />
         </Route>
       </Routes>
     </Router>

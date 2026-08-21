@@ -10,6 +10,7 @@ import AttendanceHistory from './pages/AttendanceHistory';
 import Payments from './pages/Payments';
 import AdminProfile from './pages/AdminProfile';
 import Login from './pages/Login';
+import ForgotPassword from './pages/ForgotPassword';
 import Sidebar from './compenent/Sidebar';
 import './App.css'; 
 
@@ -22,6 +23,9 @@ function App() {
           <Routes>
             {/* Login Page */}
             <Route path="/login" element={<Login />} />
+            
+            {/* Forgot Password Page - Newly added Route */}
+            <Route path="/forgot-password" element={<ForgotPassword />} />
 
             {/* Main Pages */}
             <Route path="/" element={<MainLayout />}>

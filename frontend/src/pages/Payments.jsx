@@ -1,8 +1,11 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {Check, DollarSign, History, Search, Users, X} from 'lucide-react';
 
 const PAYMENT_KEY = "paymentHistory";
 export default function Payments(){
+
+  const navigate = useNavigate();
 
   //lord student data
   const students = JSON.parse(
@@ -155,9 +158,19 @@ export default function Payments(){
       return;
     }
 
+    const existingPayments = JSON.parse(
+      localStorage.getItem("paymentHistory") || "[]"
+    );
+
+    const currentYear = new Date().getFullYear();
+
+    const invoiceNumber = `INV-${currentYear}-${String(existingPayments.length + 1).padStart(3, "0")}`;
+
     // Create new payment
     const newPayment = {
       id: Date.now(),
+
+      invoiceNumber: invoiceNumber,
 
       studentId: paymentData.studentId,
 
@@ -239,7 +252,10 @@ export default function Payments(){
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold text-black">Payments</h1>
 
-        <button className="flex items-center gap-2 rounded-lg border border-blue-600 px-4 py-3 text-sm font-semibold text-blue-700 transition hover:bg-blue-50">
+        <button
+          onClick={() => navigate("/payment/history")}
+          className="flex items-center gap-2 rounded-lg border border-blue-600 px-4 py-3 text-sm font-semibold text-blue-700 transition hover:bg-blue-50"
+        >
           <History size={18}/>
           History
         </button>

@@ -9,21 +9,34 @@ const AttendanceBarChart = () => {
   ];
 
   return (
-    <div className="attendance-chart" role="img" aria-label="Monthly attendance overview">
-      <div className="attendance-bars">
+    <div role="img" aria-label="Monthly attendance overview" className="min-h-[220px]">
+      <div className="flex h-[180px] items-end justify-around border-b border-slate-600">
         {months.map((month) => (
-          <div className="attendance-month" key={month.name}>
-            <div className="attendance-columns">
-              <span className="attendance-bar present" style={{ height: `${month.present * 7}px` }} />
-              <span className="attendance-bar absent" style={{ height: `${month.absent * 7}px` }} />
+          <div key={month.name} className="flex flex-col items-center gap-2 text-xs text-slate-400">
+            <div className="flex h-[150px] items-end gap-1">
+              <span
+                className="block w-3 rounded-t-sm bg-indigo-600"
+                style={{ height: `${month.present * 7}px` }}
+              />
+              <span
+                className="block w-3 rounded-t-sm bg-red-500"
+                style={{ height: `${month.absent * 7}px` }}
+              />
             </div>
             <span>{month.name}</span>
           </div>
         ))}
       </div>
-      <div className="chart-legend">
-        <span><i className="legend-dot present" />Present</span>
-        <span><i className="legend-dot absent" />Absent</span>
+
+      <div className="mt-3 flex justify-center gap-5 text-xs text-slate-300">
+        <span className="flex items-center gap-1.5">
+          <i className="inline-block h-2 w-2 rounded-full bg-indigo-600" />
+          Present
+        </span>
+        <span className="flex items-center gap-1.5">
+          <i className="inline-block h-2 w-2 rounded-full bg-red-500" />
+          Absent
+        </span>
       </div>
     </div>
   );

@@ -1,3 +1,11 @@
+const badgeStyles = {
+  Cash: 'bg-green-100 text-green-700',
+  Paid: 'bg-green-100 text-green-700',
+  'Bank Transfer': 'bg-blue-100 text-blue-700',
+  Card: 'bg-purple-100 text-purple-700',
+  Pending: 'bg-yellow-100 text-yellow-700',
+  Failed: 'bg-red-100 text-red-700',
+};
 
 const PaymentTable = () => {
   const payments = [
@@ -7,29 +15,37 @@ const PaymentTable = () => {
   ];
 
   return (
-    <div className="table-container">
-      <table className="payment-table">
+    <div className="overflow-hidden rounded-xl bg-white shadow-sm">
+      <table className="w-full border-collapse text-sm">
         <thead>
-          <tr>
-            <th>Invoice ID</th>
-            <th>Student Name</th>
-            <th>Date</th>
-            <th>Amount</th>
-            <th>Method</th>
-            <th>Status</th>
-            <th>Action</th>
+          <tr className="bg-gray-200 text-left">
+            <th className="px-5 py-4 text-xs font-semibold text-gray-600">Invoice ID</th>
+            <th className="px-5 py-4 text-xs font-semibold text-gray-600">Student Name</th>
+            <th className="px-5 py-4 text-xs font-semibold text-gray-600">Date</th>
+            <th className="px-5 py-4 text-xs font-semibold text-gray-600">Amount</th>
+            <th className="px-5 py-4 text-xs font-semibold text-gray-600">Method</th>
+            <th className="px-5 py-4 text-xs font-semibold text-gray-600">Status</th>
+            <th className="px-5 py-4 text-xs font-semibold text-gray-600">Action</th>
           </tr>
         </thead>
         <tbody>
           {payments.map((p, index) => (
-            <tr key={index}>
-              <td>{p.id}</td>
-              <td>{p.name}</td>
-              <td>{p.date}</td>
-              <td>{p.amount}</td>
-              <td><span className={`badge ${p.method}`}>{p.method}</span></td>
-              <td><span className={`badge ${p.status}`}>{p.status}</span></td>
-              <td>...</td>
+            <tr key={index} className="border-b border-gray-100">
+              <td className="px-5 py-4 text-gray-700">{p.id}</td>
+              <td className="px-5 py-4 text-gray-700">{p.name}</td>
+              <td className="px-5 py-4 text-gray-700">{p.date}</td>
+              <td className="px-5 py-4 text-gray-700">{p.amount}</td>
+              <td className="px-5 py-4">
+                <span className={`inline-block rounded-full px-3 py-1 text-xs font-medium ${badgeStyles[p.method]}`}>
+                  {p.method}
+                </span>
+              </td>
+              <td className="px-5 py-4">
+                <span className={`inline-block rounded-full px-3 py-1 text-xs font-medium ${badgeStyles[p.status]}`}>
+                  {p.status}
+                </span>
+              </td>
+              <td className="px-5 py-4 text-gray-700">...</td>
             </tr>
           ))}
         </tbody>

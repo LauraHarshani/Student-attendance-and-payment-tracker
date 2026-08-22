@@ -11,6 +11,7 @@ import Payments from './pages/Payments';
 import AdminProfile from './pages/AdminProfile';
 import Login from './pages/Login';
 import PaymentHistory from './pages/PaymentHistory';
+import ForgotPassword from './pages/ForgotPassword';
 
 function App() {
   return (
@@ -18,6 +19,8 @@ function App() {
       <Routes>
         {/* Login Page */}
         <Route path="/login" element={<Login />} />
+        {/* Forgot Password Page  */}
+        <Route path="/forgot-password" element={<ForgotPassword />} />
 
         {/* Main Pages */}
         <Route path="/" element={<MainLayout />}>

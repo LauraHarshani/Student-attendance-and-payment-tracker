@@ -33,6 +33,7 @@ function App() {
           <Route path="payments" element={<Payments />} />
           <Route path="admin-profile" element={<AdminProfile />} />
           <Route path="payment/history" element={<PaymentHistory />} />
+          <Route path='forgot-password' element={<ForgotPassword/>}/>
         </Route>
       </Routes>
     </Router>

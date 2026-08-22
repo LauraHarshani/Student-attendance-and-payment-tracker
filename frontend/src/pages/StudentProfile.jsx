@@ -4,11 +4,13 @@ import { User } from 'lucide-react';
 export default function StudentProfile() {
   const { id } = useParams(); 
 
+  // 1. Get the list of all students
   const allStudents = (() => {
     const saved = localStorage.getItem('studentList');
     if (saved) {
       return JSON.parse(saved);
     }
+    // Fallback dummy data if local storage is empty
     return [
       { id: '1111', name: 'Nimal', email: 'nimal@gmail.com', phone: '0751234567', address: 'Colombo', dob: '15/05/2002', joinedDate: '10/01/2026', payment: 'Paid' },
       { id: '1112', name: 'kamal', email: 'kamal@gmail.com', phone: '0711234567', address: 'Gampaha', dob: '20/08/2003', joinedDate: '12/01/2026', payment: 'Paid' },
@@ -19,8 +21,34 @@ export default function StudentProfile() {
     ];
   })();
 
-  const foundStudent = allStudents.find((s) => s.id === id);
+  // Match the student ID safely as a String
+  const foundStudent = allStudents.find((s) => String(s.id) === String(id));
 
+  // 2. Load Attendance Data dynamically for this specific student
+  const attendanceHistory = JSON.parse(localStorage.getItem('attendanceHistory')) || [];
+  
+  // Safely filter attendance matching the student ID
+  const studentAttendance = attendanceHistory.filter(record => String(record.studentId) === String(id));
+  
+  const totalDays = studentAttendance.length;
+  const presentDays = studentAttendance.filter(record => record.status === 'Present').length;
+  const absences = totalDays - presentDays;
+  const attendanceRate = totalDays > 0 ? Math.round((presentDays / totalDays) * 100) + '%' : '0%';
+
+  // 3. Load Payment Data dynamically for this specific student
+  const paymentHistory = JSON.parse(localStorage.getItem('paymentHistory')) || [];
+  
+  // Safely filter payments matching the student ID
+  const studentPayments = paymentHistory.filter(record => String(record.studentId) === String(id));
+  
+  // Sort payments by date to get the most recent one
+  studentPayments.sort((a, b) => new Date(b.paymentDate) - new Date(a.paymentDate));
+  const latestPayment = studentPayments.length > 0 ? studentPayments[0] : null;
+
+  // Get current month for display
+  const currentMonth = new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+
+  // 4. Combine all dynamic data into the student object
   const student = {
     id: foundStudent ? foundStudent.id : id,
     name: foundStudent ? (foundStudent.name || foundStudent.fullName) : 'Unknown Student',
@@ -29,14 +57,18 @@ export default function StudentProfile() {
     address: foundStudent ? foundStudent.address : 'N/A',     
     dob: foundStudent ? foundStudent.dob : 'N/A',             
     joinedDate: foundStudent ? foundStudent.joinedDate : 'N/A', 
-    attendanceRate: '94%',
-    month: 'July 2026',
-    presentDays: 19,
-    totalDays: 20,
-    absences: 1,
-    paymentStatus: foundStudent ? foundStudent.payment : 'PAID',
-    paidDate: '05-08-2026',
-    amount: 'LKR 15,000'
+    
+    // Injected Dynamic Attendance Data
+    attendanceRate: attendanceRate,
+    month: currentMonth,
+    presentDays: presentDays,
+    totalDays: totalDays,
+    absences: absences,
+    
+    // Injected Dynamic Payment Data
+    paymentStatus: latestPayment ? latestPayment.status : 'Pending',
+    paidDate: latestPayment ? latestPayment.paymentDate : '-',
+    amount: latestPayment ? `LKR ${latestPayment.amount.toLocaleString()}` : 'LKR 0'
   };
 
   return (

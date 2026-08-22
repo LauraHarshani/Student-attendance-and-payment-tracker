@@ -441,7 +441,7 @@ export default function AttendanceHistory() {
                         )
                     }
                     disabled={currentPage === 1}
-                    className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-gray-500 hover:bg-gray-100"
+                    className="px-3 py-1.5 border border-gray-300 rounded bg-white text-gray-500 hover:bg-gray-100 transition-colors"
                     >
                     ‹
                     </button>
@@ -455,9 +455,9 @@ export default function AttendanceHistory() {
                     <button
                         key={page}
                         onClick={() => setCurrentPage(page)}
-                        className={`rounded-lg px-3.5 py-1.5 text-sm ${
+                        className={`px-3.5 py-1.5 rounded font-medium transition-colors ${
                         currentPage === page
-                            ? 'bg-[#4F46E5] text-white font-bold'
+                            ? 'bg-[#4F46E5] text-white font-bold shadow-sm'
                             : 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-100'
                         }`}
                     >
@@ -474,7 +474,7 @@ export default function AttendanceHistory() {
                             )
                         }
                         disabled={currentPage === totalPages}
-                        className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-gray-500 hover:bg-gray-100"
+                        className="px-3 py-1.5 border border-gray-300 rounded bg-white text-gray-500 hover:bg-gray-100 transition-colors"
                     >
                         ›
                     </button>

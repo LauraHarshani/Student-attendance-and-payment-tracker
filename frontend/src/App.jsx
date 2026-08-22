@@ -19,6 +19,8 @@ function App() {
       <Routes>
         {/* Login Page */}
         <Route path="/login" element={<Login />} />
+        {/* Forgot Password Page  */}
+        <Route path="/forgot-password" element={<ForgotPassword />} />
 
         {/* Main Pages */}
         <Route path="/" element={<MainLayout />}>

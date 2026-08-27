@@ -15,14 +15,14 @@ const getStudents = async (req, res) => {
 // @route   POST /api/students
 const createStudent = async (req, res) => {
   try {
-    const { name, email, phone, address, joinedDate } = req.body;
+    const { name, idNumber, email, phone, address, dob, gender, joinedDate } = req.body;
 
-    const studentExists = await Student.findOne({ email });
+    const studentExists = await Student.findOne({ $or: [{ email }, { idNumber }] });
     if (studentExists) {
-      return res.status(400).json({ message: 'Student already exists' });
+      return res.status(400).json({ message: 'Student with this email or ID already exists' });
     }
 
-    const student = await Student.create({ name, email, phone, address, joinedDate });
+    const student = await Student.create({ name, idNumber, email, phone, address, dob, gender, joinedDate });
     res.status(201).json(student);
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
@@ -37,9 +37,12 @@ const updateStudent = async (req, res) => {
 
     if (student) {
       student.name = req.body.name || student.name;
+      student.idNumber = req.body.idNumber || student.idNumber;
       student.email = req.body.email || student.email;
       student.phone = req.body.phone || student.phone;
       student.address = req.body.address || student.address;
+      student.dob = req.body.dob || student.dob;
+      student.gender = req.body.gender || student.gender;
       student.joinedDate = req.body.joinedDate || student.joinedDate;
 
       const updatedStudent = await student.save();

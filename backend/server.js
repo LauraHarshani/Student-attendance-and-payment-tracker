@@ -14,9 +14,11 @@ app.use(express.json());
 
 //import routes
 const AttendanceRoutes = require("./routes/AttendanceRoutes");
+const PaymentRoutes = require("./routes/PaymentController");
 
 //Use Routes
 app.use("/api/attendance", AttendanceRoutes);
+app.use("/api/payments", PaymentRoutes);
 
 //mongodb connection
 const URL = process.env.MONGODB_URI;

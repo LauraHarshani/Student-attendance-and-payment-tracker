@@ -3,13 +3,22 @@ import { Link, useNavigate } from 'react-router-dom';
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState('');
+  const [message, setMessage] = useState('');
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    // දැනට ඇත්ත ඊමේල් එකක් යවන්න බැරි නිසා Alert එකක් දාමු
-    alert(`Password reset link has been sent to ${email} !`);
-    navigate('/login'); // ආපහු ලොගින් පේජ් එකට යවනවා
+    setLoading(true);
+
+    // Simulate sending password reset instructions
+    setTimeout(() => {
+      setLoading(false);
+      setMessage(`Password reset link has been sent to ${email}!`);
+      setTimeout(() => {
+        navigate('/login');
+      }, 2000);
+    }, 1000);
   };
 
   return (
@@ -20,6 +29,12 @@ export default function ForgotPassword() {
         <p className="text-sm text-gray-500 text-center mb-8 font-medium">
           Enter your email address and we'll send you a link to reset your password.
         </p>
+
+        {message && (
+          <div className="mb-6 p-3 bg-green-100 border border-green-400 text-green-700 rounded-xl text-center text-sm font-medium">
+            {message}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
@@ -36,9 +51,10 @@ export default function ForgotPassword() {
 
           <button
             type="submit"
-            className="w-full py-3.5 bg-[#0A1128] hover:bg-[#1B2580] text-white font-bold rounded-xl text-sm transition-colors shadow-md"
+            disabled={loading}
+            className="w-full py-3.5 bg-[#0A1128] hover:bg-[#1B2580] text-white font-bold rounded-xl text-sm transition-colors shadow-md disabled:opacity-70"
           >
-            Send Reset Link
+            {loading ? 'Sending Link...' : 'Send Reset Link'}
           </button>
         </form>
 

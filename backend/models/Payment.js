@@ -6,11 +6,7 @@ const paymentSchema = new mongoose.Schema({
         required: true,
         unique: true,
     },
-    studentName:{
-        type: String,
-        required: true,
-    },
-    studentId:{
+    idNumber:{
         type: String,
         required: true
     },

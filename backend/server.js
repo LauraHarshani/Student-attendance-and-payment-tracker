@@ -14,7 +14,7 @@ app.use(express.json());
 
 //import routes
 const AttendanceRoutes = require("./routes/AttendanceRoutes");
-const PaymentRoutes = require("./routes/PaymentController");
+const PaymentRoutes = require("./routes/PaymentRoutes");
 
 //Use Routes
 app.use("/api/attendance", AttendanceRoutes);

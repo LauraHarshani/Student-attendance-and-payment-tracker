@@ -17,7 +17,7 @@ const saveAttendance = async(req,res)=>{
         //create new attendance records
         const attendanceRecords = records.map((record)=>({
             date,
-            studentId: record.studentId,
+            idNumber: record.idNumber,
             status: record.status
         }));
 
@@ -68,6 +68,25 @@ const getAttendanceHistory = async (req,res)=>{
     }
 };
 
+//get attendance by student
+const getAttendanceByStudent = async (req, res) => {
+    try {
+        const { idNumber } = req.params;
+
+        const records = await Attendance
+            .find({ idNumber })
+            .sort({ date: -1 });
+
+        res.status(200).json(records);
+
+    } catch (error) {
+        res.status(500).json({
+            message: "Failed to get student attendance",
+            error: error.message
+        });
+    }
+};
+
 //update one attendance record
 const updateAttendance = async(req,res)=>{
     try{
@@ -79,7 +98,7 @@ const updateAttendance = async(req,res)=>{
             {status},
             {
                 new: true,
-                newValidators: true,
+                runValidators: true,
             }
         );
 
@@ -128,6 +147,7 @@ const deleteAttendance =async (req,res)=>{
 module.exports ={
     saveAttendance,
     getAttendanceByDate,
+    getAttendanceByStudent,
     getAttendanceHistory,
     updateAttendance,
     deleteAttendance,

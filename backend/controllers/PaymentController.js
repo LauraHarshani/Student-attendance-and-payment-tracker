@@ -1,14 +1,40 @@
-const Payment = require("../models/Payment")
+const Payment = require("../models/Payment");
+const Student = require("../models/Student");
 
 //create payment
 const createPayment = async (req,res) =>{
     try{
-        const payment = await Payment.create(req.body);
+        const {
+            invoiceNumber,
+            idNumber,
+            amount,
+            paymentMonth,
+            paymentDate,
+            status
+        } = req.body;
+
+        const student = await Student.findOne({idNumber});
+
+        if(!student){
+            return res.status(404).json({
+                message: "Student not found"
+            });
+        }
+
+        const payment = await Payment.create({
+            invoiceNumber,
+            idNumber,
+            amount,
+            paymentMonth,
+            paymentDate,
+            status
+        });
 
         res.status(201).json({
             message: "Payment created successfully",
             payment,
         });
+
     } catch(error){
 
         res.status(400).json({
@@ -59,6 +85,14 @@ const getOnePayment = async (req,res)=>{
 const getPaymentsByStudent = async (req, res) => {
     try {
         const { idNumber } = req.params;
+
+        const student = await Student.findOne({ idNumber });
+
+        if (!student) {
+            return res.status(404).json({
+                message: "Student not found"
+            });
+        }
 
         const payments = await Payment
             .find({ idNumber })

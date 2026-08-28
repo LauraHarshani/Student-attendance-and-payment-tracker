@@ -1,4 +1,5 @@
-const Attendance = require("../models/Attendance")
+const Attendance = require("../models/Attendance");
+const Student = require("../models/Student");
 
 //save attendance
 const saveAttendance = async(req,res)=>{
@@ -9,6 +10,19 @@ const saveAttendance = async(req,res)=>{
             return res.status(400).json({
                 message: "Date and attendance records are required"
             });
+        }
+
+        //check students exist
+        for(const record of records){
+            const student = await Student.findOne({
+                idNumber: record.idNumber
+            });
+
+            if(!student){
+                return res.status(404).json({
+                    message: `Student ${idNumber} not found`
+                });
+            }
         }
 
         //Remove existing attendance for this date
@@ -72,6 +86,14 @@ const getAttendanceHistory = async (req,res)=>{
 const getAttendanceByStudent = async (req, res) => {
     try {
         const { idNumber } = req.params;
+
+        const student = await Student.findOne({ idNumber });
+
+        if (!student) {
+            return res.status(404).json({
+                message: "Student not found"
+            });
+        }
 
         const records = await Attendance
             .find({ idNumber })

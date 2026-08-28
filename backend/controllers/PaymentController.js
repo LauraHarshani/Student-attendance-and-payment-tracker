@@ -55,6 +55,25 @@ const getOnePayment = async (req,res)=>{
     }
 };
 
+//get payment details by student
+const getPaymentsByStudent = async (req, res) => {
+    try {
+        const { idNumber } = req.params;
+
+        const payments = await Payment
+            .find({ idNumber })
+            .sort({ paymentDate: -1 });
+
+        res.status(200).json({ payments });
+
+    } catch (error) {
+        res.status(500).json({
+            message: "Failed to get student payments",
+            error: error.message
+        });
+    }
+};
+
 //update payment
 const updatePayment = async (req,res)=>{
 
@@ -69,7 +88,7 @@ const updatePayment = async (req,res)=>{
         );
 
         if(!payment){
-            res.status(404).json({
+            return res.status(404).json({
                 message: "Payment not found"
             });
         }
@@ -114,6 +133,7 @@ module.exports = {
     createPayment,
     getPayments,
     getOnePayment,
+    getPaymentsByStudent,
     updatePayment,
     deletePayment
 }

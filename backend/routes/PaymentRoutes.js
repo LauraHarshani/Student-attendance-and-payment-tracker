@@ -3,6 +3,7 @@ const {
     createPayment,
     getPayments,
     getOnePayment,
+    getPaymentsByStudent,
     updatePayment,
     deletePayment,
 } = require("../controllers/PaymentController")
@@ -17,6 +18,9 @@ router.get("/", getPayments);
 
 //get one payment details
 router.get("/:id", getOnePayment);
+
+//get payments by student
+router.get("/student/:idNumber", getPaymentsByStudent);
 
 //update payment
 router.put("/:id", updatePayment);

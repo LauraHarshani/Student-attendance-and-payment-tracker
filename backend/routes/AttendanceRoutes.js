@@ -3,6 +3,7 @@ const {
     saveAttendance,
     getAttendanceByDate,
     getAttendanceHistory,
+    getAttendanceByStudent,
     updateAttendance,
     deleteAttendance,
 } = require("../controllers/AttendanceController")
@@ -17,6 +18,9 @@ router.get("/date/:date", getAttendanceByDate);
 
 // Get all attendance history
 router.get("/history", getAttendanceHistory);
+
+//Get attendance by student
+router.get("/student/:idNumber", getAttendanceByStudent);
 
 //update one attendance record
 router.put("/:id", updateAttendance);

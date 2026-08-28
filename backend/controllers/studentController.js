@@ -11,6 +11,21 @@ const getStudents = async (req, res) => {
   }
 };
 
+// @desc    Get single student by ID
+// @route   GET /api/students/:id
+const getStudentById = async (req, res) => {
+  try {
+    const student = await Student.findById(req.params.id);
+    if (student) {
+      res.status(200).json(student);
+    } else {
+      res.status(404).json({ message: 'Student not found' });
+    }
+  } catch (error) {
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
 // @desc    Create a new student
 // @route   POST /api/students
 const createStudent = async (req, res) => {
@@ -74,6 +89,7 @@ const deleteStudent = async (req, res) => {
 
 module.exports = {
   getStudents,
+  getStudentById,
   createStudent,
   updateStudent,
   deleteStudent,

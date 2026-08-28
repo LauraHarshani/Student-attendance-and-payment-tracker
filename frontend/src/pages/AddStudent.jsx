@@ -16,45 +16,54 @@ export default function AddStudent() {
     joinedDate: ''
   });
 
+  const [error, setError] = useState('');
+
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setError('');
 
-  
     const newStudent = {
-      id: formData.idNumber,
       name: formData.fullName,
+      idNumber: formData.idNumber,
       email: formData.email,
       phone: formData.phone,
       address: formData.address,       
       dob: formData.dob,               
-      joinedDate: formData.joinedDate, 
-      payment: 'Paid' 
+      gender: formData.gender,
+      joinedDate: formData.joinedDate
     };
 
-    const existingStudents = JSON.parse(localStorage.getItem('studentList')) || [
-      { id: '1111', name: 'Nimal', email: 'nimal@gmail.com', phone: '0751234567', address: 'Colombo', dob: '15/05/2002', joinedDate: '10/01/2026', payment: 'Paid' },
-      { id: '1112', name: 'kamal', email: 'kamal@gmail.com', phone: '0711234567', address: 'Gampaha', dob: '20/08/2003', joinedDate: '12/01/2026', payment: 'Paid' },
-      { id: '1123', name: 'Sadun', email: 'sadun@gmail.com', phone: '0761234567', address: 'Kandy', dob: '05/12/2001', joinedDate: '15/01/2026', payment: 'Paid' },
-      { id: '1114', name: 'Kasun', email: 'kasun@gmail.com', phone: '0771234567', address: 'Galle', dob: '22/03/2002', joinedDate: '18/01/2026', payment: 'Paid' },
-      { id: '1125', name: 'Kaushi', email: 'kaushi@gmail.com', phone: '0781234567', address: 'Matara', dob: '11/11/2003', joinedDate: '20/01/2026', payment: 'Paid' },
-      { id: '1129', name: 'Sithumini', email: 'sithu@gmail.com', phone: '0761243434', address: 'Kurunegala', dob: '30/06/2002', joinedDate: '25/01/2026', payment: 'Paid' },
-    ];
+    try {
+      const token = localStorage.getItem('token'); 
+      const response = await fetch('http://localhost:5000/api/students', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}` 
+        },
+        body: JSON.stringify(newStudent)
+      });
 
-    const updatedList = [...existingStudents, newStudent];
-    localStorage.setItem('studentList', JSON.stringify(updatedList));
+      const data = await response.json();
 
-    alert("Student added successfully!");
-    navigate('/students'); 
+      if (response.ok) {
+        alert("Student added successfully!");
+        navigate('/students'); 
+      } else {
+        setError(data.message || 'Failed to add student. Please check the details.');
+      }
+    } catch (err) {
+      setError('Server connection failed. Please try again later.');
+    }
   };
 
   return (
     <div className="flex flex-col h-full bg-white rounded-2xl p-8 shadow-sm">
       
-      {/* Top Header & Breadcrumb */}
       <div className="mb-8">
         <h2 className="text-3xl font-extrabold text-black mb-1">Add New Student</h2>
         <p className="text-gray-500 text-sm">
@@ -64,23 +73,22 @@ export default function AddStudent() {
         </p>
       </div>
 
-      {/* Form Container */}
       <div className="bg-[#F8F9FA] rounded-2xl p-8 border border-gray-200 shadow-inner flex-1 flex flex-col justify-between">
+        
+        {error && (
+          <div className="mb-6 p-3 bg-red-100 border border-red-400 text-red-700 rounded-xl text-center font-medium">
+            {error}
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} className="space-y-6">
-          
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-12 gap-y-6">
             
-            {/* Left Column */}
             <div className="space-y-6">
               <div>
                 <label className="block text-sm font-bold text-gray-800 mb-2">Full Name</label>
                 <input 
-                  type="text" 
-                  name="fullName"
-                  required
-                  value={formData.fullName}
-                  onChange={handleChange}
-                  placeholder="Enter Full Name" 
+                  type="text" name="fullName" required value={formData.fullName} onChange={handleChange} placeholder="Enter Full Name" 
                   className="w-full px-4 py-3.5 bg-[#E5E7EB] border border-gray-300 rounded-xl text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-[#0A1128]"
                 />
               </div>
@@ -88,12 +96,7 @@ export default function AddStudent() {
               <div>
                 <label className="block text-sm font-bold text-gray-800 mb-2">ID Number</label>
                 <input 
-                  type="text" 
-                  name="idNumber"
-                  required
-                  value={formData.idNumber}
-                  onChange={handleChange}
-                  placeholder="Enter Student ID" 
+                  type="text" name="idNumber" required value={formData.idNumber} onChange={handleChange} placeholder="Enter Student ID" 
                   className="w-full px-4 py-3.5 bg-[#E5E7EB] border border-gray-300 rounded-xl text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-[#0A1128]"
                 />
               </div>
@@ -101,12 +104,7 @@ export default function AddStudent() {
               <div>
                 <label className="block text-sm font-bold text-gray-800 mb-2">Email</label>
                 <input 
-                  type="email" 
-                  name="email"
-                  required
-                  value={formData.email}
-                  onChange={handleChange}
-                  placeholder="Enter Email Address" 
+                  type="email" name="email" required value={formData.email} onChange={handleChange} placeholder="Enter Email Address" 
                   className="w-full px-4 py-3.5 bg-[#E5E7EB] border border-gray-300 rounded-xl text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-[#0A1128]"
                 />
               </div>
@@ -114,12 +112,7 @@ export default function AddStudent() {
               <div>
                 <label className="block text-sm font-bold text-gray-800 mb-2">Phone</label>
                 <input 
-                  type="text" 
-                  name="phone"
-                  required
-                  value={formData.phone}
-                  onChange={handleChange}
-                  placeholder="Enter Phone Number" 
+                  type="text" name="phone" required value={formData.phone} onChange={handleChange} placeholder="Enter Phone Number" 
                   className="w-full px-4 py-3.5 bg-[#E5E7EB] border border-gray-300 rounded-xl text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-[#0A1128]"
                 />
               </div>
@@ -127,27 +120,17 @@ export default function AddStudent() {
               <div>
                 <label className="block text-sm font-bold text-gray-800 mb-2">Address</label>
                 <input 
-                  type="text" 
-                  name="address"
-                  required
-                  value={formData.address}
-                  onChange={handleChange}
-                  placeholder="Enter Address" 
+                  type="text" name="address" required value={formData.address} onChange={handleChange} placeholder="Enter Address" 
                   className="w-full px-4 py-3.5 bg-[#E5E7EB] border border-gray-300 rounded-xl text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-[#0A1128]"
                 />
               </div>
             </div>
 
-            {/* Right Column */}
             <div className="space-y-6">
               <div>
                 <label className="block text-sm font-bold text-gray-800 mb-2">Date of Birth</label>
                 <input 
-                  type="date" 
-                  name="dob"
-                  required
-                  value={formData.dob}
-                  onChange={handleChange}
+                  type="date" name="dob" required value={formData.dob} onChange={handleChange}
                   className="w-full px-4 py-3.5 bg-[#E5E7EB] border border-gray-300 rounded-xl text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-[#0A1128]"
                 />
               </div>
@@ -156,10 +139,7 @@ export default function AddStudent() {
                 <label className="block text-sm font-bold text-gray-800 mb-2">Gender</label>
                 <div className="relative">
                   <select 
-                    name="gender"
-                    required
-                    value={formData.gender}
-                    onChange={handleChange}
+                    name="gender" required value={formData.gender} onChange={handleChange}
                     className="w-full px-4 py-3.5 bg-[#E5E7EB] border border-gray-300 rounded-xl text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-[#0A1128] appearance-none"
                   >
                     <option value="">Select Gender</option>
@@ -175,11 +155,7 @@ export default function AddStudent() {
               <div>
                 <label className="block text-sm font-bold text-gray-800 mb-2">Joined Date</label>
                 <input 
-                  type="date" 
-                  name="joinedDate"
-                  required
-                  value={formData.joinedDate}
-                  onChange={handleChange}
+                  type="date" name="joinedDate" required value={formData.joinedDate} onChange={handleChange}
                   className="w-full px-4 py-3.5 bg-[#E5E7EB] border border-gray-300 rounded-xl text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-[#0A1128]"
                 />
               </div>
@@ -187,11 +163,9 @@ export default function AddStudent() {
 
           </div>
 
-          {/* Bottom Action Buttons */}
           <div className="flex justify-end items-center gap-4 pt-6 border-t border-gray-300 mt-10">
             <button 
-              type="button"
-              onClick={() => navigate('/students')}
+              type="button" onClick={() => navigate('/students')}
               className="px-8 py-3.5 bg-[#E5E7EB] hover:bg-gray-300 text-gray-800 font-bold rounded-xl text-sm transition-colors"
             >
               Cancel

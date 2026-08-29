@@ -8,8 +8,7 @@ import {
   Search,
 } from "lucide-react"
 
-const ATTENDANCE_KEY = 'attendanceHistory';
-const STUDENT_KEY = 'studentList';
+const API_URL = 'http://localhost:5000/api';
 
 export default function Attendance() {
 
@@ -43,39 +42,48 @@ export default function Attendance() {
 
   // Load students from students.jsx
   
-  const loadStudentsForDate = (date) => {
+  const loadStudentsForDate = async (date) => {
 
-    const savedStudents = JSON.parse(localStorage.getItem(STUDENT_KEY)) || [];
+    //get students from backend
+    const studentsResponse = await fetch(`${API_URL}/students`)
 
-    const attendanceRecords = JSON.parse(localStorage.getItem(ATTENDANCE_KEY)) || [];
+    if (!studentsResponse.ok) {
+      throw new Error('Failed to fetch students');
+    }
 
     const dateKey = getDateKey(date);
 
+    const savedStudents = await studentsResponse.json();
+
     // Get attendance records for selected date
-    const dateRecords = attendanceRecords.filter(
-      (record) => record.date === dateKey
-    );
+    const attendanceResponse = await fetch(`${API_URL}/attendance/date/${dateKey}`);
+
+    if(!attendanceResponse.ok){
+      throw new Error('Failed to fetch attendance');
+    }
+
+    const attendanceRecords = await attendanceResponse.json();
 
     // Create a quick lookup
     const attendanceMap = {};
 
-    dateRecords.forEach((record) => {
-      attendanceMap[record.studentId] = record.status;
+    attendanceRecords.forEach((record) => {
+      attendanceMap[record.idNumber] = record.status;
     });
 
     // Add attendance status to every student
     const studentsWithStatus = savedStudents.map((student) => ({
       ...student,
-      status: attendanceMap[student.id] || 'Absent'
+      status: attendanceMap[student.idNumber] || 'Absent'
     }));
 
     setStudents(studentsWithStatus);
   };
 
   // Load students when page opens
-  useEffect(() => {
+  useEffect(()=>{
     loadStudentsForDate(selectedDate);
-  }, []);
+  },[selectedDate]);
 
 
   // Change date
@@ -90,58 +98,63 @@ export default function Attendance() {
     setSelectedDate(newDate);
     setCurrentPage(1);
 
-    loadStudentsForDate(newDate);
+    // loadStudentsForDate(newDate);
   };
 
   // Mark student present
-  const toggleAttendance = (studentId) => {
-  setStudents((currentStudents) =>
-    currentStudents.map((student) =>
-      student.id === studentId
-        ? {
-            ...student,
-            status: student.status === 'Present' ? 'Absent' : 'Present',
-          }
-        : student
-    )
-  );
-};
+  const toggleAttendance = (idNumber) => {
+    setStudents((currentStudents) =>
+      currentStudents.map((student) =>
+        student.idNumber === idNumber
+          ? {
+              ...student,
+              status: student.status === 'Present' ? 'Absent' : 'Present',
+            }
+          : student
+      )
+    );
+  };
   //filter search bar
   const filteredStudents = students.filter((student) =>
-    `${student.name} ${student.id}`
+    `${student.name} ${student.idNumber}`
       .toLowerCase()
       .includes(searchTerm.toLowerCase())
   );
 
   //save attendance
-  const saveAttendance = () => {
-  const existingRecords =
-    JSON.parse(localStorage.getItem(ATTENDANCE_KEY)) || [];
-  
-  const dateKey = getDateKey(selectedDate);
+  const saveAttendance = async () => {
+    try {
+      const dateKey = getDateKey(selectedDate);
 
-  const newRecords = students.map((student) => ({
-    date: dateKey,
-    studentId: student.id,
-    status: student.status,
-  }));
+      const records = students.map((student) => ({
+        idNumber: student.idNumber,
+        status: student.status,
+      }));
 
-  // Remove old records for this date
-  const updatedRecords = [
-    ...existingRecords.filter(
-      (record) =>
-        record.date !== dateKey
-    ),
-    ...newRecords,
-  ];
+      const response = await fetch(`${API_URL}/attendance`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          date: dateKey,
+          records,
+        }),
+      });
 
-  localStorage.setItem(
-    ATTENDANCE_KEY,
-    JSON.stringify(updatedRecords)
-  );
+      const data = await response.json();
 
-  alert('Attendance saved successfully!');
-};
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to save attendance');
+      }
+
+      alert('Attendance saved successfully!');
+
+    } catch (error) {
+      console.error('Error saving attendance:', error);
+      alert('Failed to save attendance.');
+    }
+  };
 
   //pagination
   const totalPages = Math.ceil(filteredStudents.length / studentsPerPage);
@@ -312,7 +325,7 @@ export default function Attendance() {
               {currentStudents.map((student) => (
 
                 <tr
-                  key={student.id}
+                  key={student.idNumber}
                   className="border-b border-gray-100"
                 >
 
@@ -321,7 +334,7 @@ export default function Attendance() {
                   </td>
 
                   <td className="px-4 py-3 text-gray-600">
-                    {student.id}
+                    {student.idNumber}
                   </td>
 
                   <td className="px-4 py-3">
@@ -342,7 +355,7 @@ export default function Attendance() {
 
                     <button
                       type="button"
-                      onClick={() => toggleAttendance(student.id)}
+                      onClick={() => toggleAttendance(student.idNumber)}
                       className={`rounded-md px-4 py-1.5 text-xs font-medium text-white transition ${
                         student.status === 'Present'
                           ? 'bg-red-700 hover:bg-red-600'

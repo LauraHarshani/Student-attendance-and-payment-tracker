@@ -6,24 +6,47 @@ export default function StudentProfile() {
   const { id } = useParams(); 
   
   const [student, setStudent] = useState(null);
+  const [attendanceRecords, setAttendanceRecords] = useState([]);
+  const [paymentRecords, setPaymentRecords] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // 1. Fetch student data from the backend when the page loads
   useEffect(() => {
-    const fetchStudentDetails = async () => {
+    const fetchAllData = async () => {
       try {
         const token = localStorage.getItem('token');
-        const response = await fetch(`http://localhost:5000/api/students/${id}`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
+        const headers = { 'Authorization': `Bearer ${token}` };
 
-        if (response.ok) {
-          const data = await response.json();
-          setStudent(data);
+        // 1. Fetch Student details from the backend
+        const studentRes = await fetch(`http://localhost:5000/api/students/${id}`, { headers });
+        let studentData = null;
+        
+        if (studentRes.ok) {
+          studentData = await studentRes.json();
+          setStudent(studentData);
         } else {
           setError('Student not found or access denied.');
+          setLoading(false);
+          return;
         }
+
+        // Fetch Attendance and Payments directly using the student's idNumber
+        if (studentData && studentData.idNumber) {
+          // 2. Fetch specific student's Attendance using idNumber
+          const attRes = await fetch(`http://localhost:5000/api/attendance/student/${studentData.idNumber}`, { headers });
+          if (attRes.ok) {
+            const attData = await attRes.json();
+            setAttendanceRecords(Array.isArray(attData) ? attData : []);
+          }
+
+          // 3. Fetch specific student's Payments using idNumber
+          const payRes = await fetch(`http://localhost:5000/api/payments/student/${studentData.idNumber}`, { headers });
+          if (payRes.ok) {
+            const payData = await payRes.json();
+            setPaymentRecords(Array.isArray(payData) ? payData : []);
+          }
+        }
+
       } catch (err) {
         setError('Server connection failed.');
       } finally {
@@ -31,35 +54,31 @@ export default function StudentProfile() {
       }
     };
 
-    fetchStudentDetails();
+    fetchAllData();
   }, [id]);
 
   if (loading) return <div className="flex h-full items-center justify-center text-lg font-bold text-gray-600">Loading Profile...</div>;
   if (error) return <div className="flex h-full items-center justify-center text-lg font-bold text-red-500">{error}</div>;
   if (!student) return <div className="flex h-full items-center justify-center text-lg font-bold text-gray-600">No student data available.</div>;
 
-  // 2. Temporary Attendance Data (To be updated later by Minidu)
-  const attendanceHistory = JSON.parse(localStorage.getItem('attendanceHistory')) || [];
-  const studentAttendance = attendanceHistory.filter(record => String(record.studentId) === String(id));
-  const totalDays = studentAttendance.length;
-  const presentDays = studentAttendance.filter(record => record.status === 'Present').length;
+  // Calculations for Attendance Summary
+  const totalDays = attendanceRecords.length;
+  const presentDays = attendanceRecords.filter(record => record.status === 'Present').length;
   const absences = totalDays - presentDays;
   const attendanceRate = totalDays > 0 ? Math.round((presentDays / totalDays) * 100) + '%' : '0%';
 
-  // 3. Temporary Payment Data (To be updated later by Minidu)
-  const paymentHistory = JSON.parse(localStorage.getItem('paymentHistory')) || [];
-  const studentPayments = paymentHistory.filter(record => String(record.studentId) === String(id));
-  studentPayments.sort((a, b) => new Date(b.paymentDate) - new Date(a.paymentDate));
-  const latestPayment = studentPayments.length > 0 ? studentPayments[0] : null;
+  // Calculations for Payment Summary
+  const sortedPayments = [...paymentRecords].sort((a, b) => new Date(b.paymentDate || b.date) - new Date(a.paymentDate || a.date));
+  const latestPayment = sortedPayments.length > 0 ? sortedPayments[0] : null;
   const currentMonth = new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
 
-  // Helper function to format MongoDB ISO dates (e.g., "2004-01-15T00:00:00.000Z" -> "2004-01-15")
+  // Helper function to format MongoDB ISO dates (YYYY-MM-DD)
   const formatDate = (dateString) => {
     if (!dateString || dateString === 'N/A') return 'N/A';
     return dateString.split('T')[0];
   };
 
-  // 4. Combine API data and UI data
+  // Combine API data and UI data for display mapping
   const displayStudent = {
     id: student.idNumber || student._id,
     name: student.name || 'Unknown Student',
@@ -75,9 +94,9 @@ export default function StudentProfile() {
     totalDays: totalDays,
     absences: absences,
     
-    paymentStatus: latestPayment ? latestPayment.status : (student.payment || 'Pending'),
-    paidDate: latestPayment ? latestPayment.paymentDate : '-',
-    amount: latestPayment ? `LKR ${latestPayment.amount.toLocaleString()}` : 'LKR 0'
+    paymentStatus: latestPayment ? (latestPayment.status || 'Paid') : (student.payment || 'Pending'),
+    paidDate: latestPayment ? formatDate(latestPayment.paymentDate || latestPayment.date) : '-',
+    amount: latestPayment ? `LKR ${Number(latestPayment.amount || 0).toLocaleString()}` : 'LKR 0'
   };
 
   return (
@@ -94,6 +113,7 @@ export default function StudentProfile() {
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 pb-6">
         
+        {/* Left Column: Student Details */}
         <div className="lg:col-span-6 bg-[#F8F9FA] rounded-2xl p-6 border border-gray-200 flex flex-col items-center">
           <div className="w-24 h-24 rounded-full border-2 border-gray-400 flex items-center justify-center bg-gray-100 text-gray-500 mb-5 shadow-inner">
             <User size={52} strokeWidth={1.5} />
@@ -124,7 +144,10 @@ export default function StudentProfile() {
           </div>
         </div>
 
+        {/* Right Column: Attendance & Payment Summaries */}
         <div className="lg:col-span-6 flex flex-col gap-8">
+          
+          {/* Attendance Summary Card */}
           <div className="bg-[#F8F9FA] rounded-2xl p-6 border border-gray-200">
             <h3 className="text-lg font-bold text-gray-800 mb-4">Attendance Summary</h3>
             <div className="bg-white rounded-xl p-5 border border-gray-200 mb-4 flex items-center justify-between shadow-sm">
@@ -147,6 +170,7 @@ export default function StudentProfile() {
             </div>
           </div>
 
+          {/* Payment Summary Card */}
           <div className="bg-[#F8F9FA] rounded-2xl p-6 border border-gray-200 flex flex-col justify-between">
             <h3 className="text-lg font-bold text-gray-800 mb-4">Payment Summary</h3>
             <div className="py-2 mb-4">
@@ -159,6 +183,7 @@ export default function StudentProfile() {
               <span>Amount : {displayStudent.amount}</span>
             </div>
           </div>
+          
         </div>
 
       </div>

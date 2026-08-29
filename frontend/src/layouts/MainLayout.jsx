@@ -9,8 +9,8 @@ export default function MainLayout() {
   
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState([]); 
+  const [visibleCount, setVisibleCount] = useState(5); 
   
-  // State to save read notification IDs (uses localStorage to persist across page refreshes)
   const [readNotifs, setReadNotifs] = useState(() => {
     const saved = localStorage.getItem('readNotifications');
     return saved ? JSON.parse(saved) : [];
@@ -19,48 +19,73 @@ export default function MainLayout() {
   const userName = localStorage.getItem('userName') || 'Harshani';
   const userInitial = userName.charAt(0).toUpperCase();
 
-  // Fetch real data from the backend when the component mounts
   useEffect(() => {
     fetchRealNotifications();
   }, []);
 
+  // 100% Accurate Timestamp Extraction using MongoDB _id
+  const getExactCreationTime = (item) => {
+    if (item._id && typeof item._id === 'string' && item._id.length === 24) {
+      // Extract the exact creation timestamp down to the second from MongoDB ObjectId
+      return parseInt(item._id.substring(0, 8), 16) * 1000;
+    }
+    if (item.createdAt) {
+      return new Date(item.createdAt).getTime();
+    }
+    return Date.now();
+  };
+
   const fetchRealNotifications = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/students', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      const data = await response.json();
-      
-      if (response.ok) {
-        let generatedNotifications = [];
-        
-        // 1. Newly added students (get the last 3 registered students)
-        const latestStudents = [...data].reverse().slice(0, 3);
-        latestStudents.forEach(student => {
-          generatedNotifications.push({
-            id: `reg_${student._id}`,
-            text: `New student ${student.name} just registered.`
-          });
-        });
+      const headers = { 'Authorization': `Bearer ${token}` };
 
-        // 2. Payments (get the last 3 students with a 'Paid' payment status)
-        const paidStudents = data.filter(s => s.payment === 'Paid').reverse().slice(0, 3);
-        paidStudents.forEach(student => {
-          generatedNotifications.push({
-            id: `pay_${student._id}`,
-            text: `Payment received for ${student.name}.`
-          });
-        });
+      // 1. Fetch Students
+      const studentRes = await fetch('http://localhost:5000/api/students', { headers });
+      let studentsData = [];
+      if (studentRes.ok) studentsData = await studentRes.json();
 
-        setNotifications(generatedNotifications);
+      // 2. Fetch Payments
+      const paymentRes = await fetch('http://localhost:5000/api/payments', { headers });
+      let paymentsData = [];
+      if (paymentRes.ok) {
+        const payJson = await paymentRes.json();
+        paymentsData = Array.isArray(payJson) ? payJson : (payJson.payments || payJson.data || []);
       }
+      
+      let generatedNotifications = [];
+      
+      // Add Student Notifications using exact DB creation time
+      studentsData.forEach(student => {
+        generatedNotifications.push({
+          id: `reg_${student._id}`,
+          text: `New student ${student.name} just registered.`,
+          timestamp: getExactCreationTime(student)
+        });
+      });
+
+      // Add Payment Notifications using exact DB creation time
+      paymentsData.forEach(pay => {
+        const student = studentsData.find(s => String(s.idNumber) === String(pay.idNumber));
+        const studentName = student ? student.name : `ID: ${pay.idNumber}`;
+        
+        generatedNotifications.push({
+          id: `pay_${pay._id}`,
+          text: `Payment of LKR ${pay.amount} received from ${studentName}.`,
+          timestamp: getExactCreationTime(pay)
+        });
+      });
+
+      // Sort precisely by the extracted exact timestamps (Descending)
+      generatedNotifications.sort((a, b) => b.timestamp - a.timestamp);
+
+      setNotifications(generatedNotifications);
+      
     } catch (error) {
       console.error('Error fetching notifications:', error);
     }
   };
 
-  // Function to mark a notification as read when it is clicked
   const markAsRead = (id) => {
     if (!readNotifs.includes(id)) {
       const updatedReadList = [...readNotifs, id];
@@ -75,12 +100,10 @@ export default function MainLayout() {
     navigate('/login');
   };
 
-  // Function to check if a navigation link is currently active
   const isActive = (path) => {
     return location.pathname === path;
   };
 
-  // Count the number of unread notifications
   const unreadCount = notifications.filter(note => !readNotifs.includes(note.id)).length;
 
   return (
@@ -136,7 +159,6 @@ export default function MainLayout() {
                 onClick={() => setShowNotifications(!showNotifications)}
                 className="relative p-2 text-gray-500 hover:text-blue-600 transition-colors"
               >
-                {/* Display only the unread count in red */}
                 {unreadCount > 0 && (
                   <span className="absolute top-0 right-0 w-4 h-4 flex items-center justify-center bg-red-500 text-white text-[10px] font-bold rounded-full border border-white">
                     {unreadCount}
@@ -150,14 +172,15 @@ export default function MainLayout() {
 
               {/* Notification Dropdown */}
               {showNotifications && (
-                <div className="absolute right-0 mt-3 w-80 bg-white rounded-xl shadow-xl border border-gray-200 z-50 overflow-hidden">
-                  <div className="px-4 py-3 border-b border-gray-100 bg-gray-50 font-bold text-gray-800 flex justify-between items-center">
+                <div className="absolute right-0 mt-3 w-80 bg-white rounded-xl shadow-xl border border-gray-200 z-50 overflow-hidden flex flex-col max-h-[400px]">
+                  <div className="px-4 py-3 border-b border-gray-100 bg-gray-50 font-bold text-gray-800 flex justify-between items-center flex-shrink-0">
                     Notifications
                     {unreadCount > 0 && <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">{unreadCount} New</span>}
                   </div>
-                  <div className="max-h-72 overflow-y-auto">
+                  
+                  <div className="overflow-y-auto flex-1">
                     {notifications.length > 0 ? (
-                      notifications.map((note) => {
+                      notifications.slice(0, visibleCount).map((note) => {
                         const isRead = readNotifs.includes(note.id);
                         return (
                           <div 
@@ -165,7 +188,6 @@ export default function MainLayout() {
                             onClick={() => markAsRead(note.id)}
                             className={`px-4 py-3 border-b border-gray-50 text-sm cursor-pointer transition-colors flex gap-3 items-start ${isRead ? 'bg-white text-gray-500' : 'bg-blue-50/30 hover:bg-blue-50/60 text-gray-800'}`}
                           >
-                             {/* Show the blue dot indicator only if the notification is unread */}
                              {!isRead && <div className="w-2 h-2 mt-1.5 bg-blue-500 rounded-full flex-shrink-0"></div>}
                              <div className={isRead ? '' : 'font-semibold'}>{note.text}</div>
                           </div>
@@ -177,6 +199,16 @@ export default function MainLayout() {
                       </div>
                     )}
                   </div>
+                  
+                  {/* See More Button */}
+                  {notifications.length > visibleCount && (
+                    <div 
+                      onClick={() => setVisibleCount(prev => prev + 5)}
+                      className="px-4 py-3 text-center text-sm text-blue-600 font-bold cursor-pointer hover:bg-blue-50 border-t border-gray-200 flex-shrink-0 transition-colors"
+                    >
+                      See More
+                    </div>
+                  )}
                 </div>
               )}
             </div>

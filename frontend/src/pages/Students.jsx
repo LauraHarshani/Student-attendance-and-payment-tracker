@@ -8,6 +8,7 @@ export default function Students() {
   // Initialize with an empty array instead of local storage
   const [students, setStudents] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [filterStatus, setFilterStatus] = useState('All'); // Added filter state
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingStudent, setEditingStudent] = useState(null);
 
@@ -80,10 +81,15 @@ export default function Students() {
     }
   };
 
-  const filteredStudents = students.filter((student) => 
-    student.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    student.idNumber?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Updated filter logic for both search term and payment status
+  const filteredStudents = students.filter((student) => {
+    const matchesSearch = student.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          student.idNumber?.toLowerCase().includes(searchTerm.toLowerCase());
+                          
+    const matchesFilter = filterStatus === 'All' || (student.payment || 'Pending') === filterStatus;
+    
+    return matchesSearch && matchesFilter;
+  });
 
   return (
     <div className="flex flex-col h-full bg-white rounded-2xl p-6 shadow-sm relative">
@@ -107,9 +113,21 @@ export default function Students() {
             />
           </div>
           
-          <button className="flex items-center gap-2 px-5 py-2.5 border border-gray-400 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-semibold transition-colors">
-            <Filter size={18} /> Filter
-          </button>
+          {/* New Filter Dropdown */}
+          <div className="relative flex items-center">
+            <span className="absolute left-3 pointer-events-none text-gray-600">
+              <Filter size={18} />
+            </span>
+            <select 
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+              className="pl-10 pr-8 py-2.5 border border-gray-400 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-semibold transition-colors focus:outline-none cursor-pointer text-gray-700 appearance-none"
+            >
+              <option value="All">All Status</option>
+              <option value="Paid">Paid</option>
+              <option value="Pending">Pending</option>
+            </select>
+          </div>
           
           <button 
             onClick={() => navigate('/students/add')}

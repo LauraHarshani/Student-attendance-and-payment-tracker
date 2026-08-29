@@ -16,11 +16,11 @@ router.post("/", createPayment);
 //get all payment details
 router.get("/", getPayments);
 
-//get one payment details
-router.get("/:id", getOnePayment);
-
 //get payments by student
 router.get("/student/:idNumber", getPaymentsByStudent);
+
+//get one payment details
+router.get("/:id", getOnePayment);
 
 //update payment
 router.put("/:id", updatePayment);

@@ -20,7 +20,7 @@ const saveAttendance = async(req,res)=>{
 
             if(!student){
                 return res.status(404).json({
-                    message: `Student ${idNumber} not found`
+                    message: `Student ${record.idNumber} not found`
                 });
             }
         }

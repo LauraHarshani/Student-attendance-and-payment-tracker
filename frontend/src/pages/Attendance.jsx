@@ -41,49 +41,54 @@ export default function Attendance() {
   })
 
   // Load students from students.jsx
-  
-  const loadStudentsForDate = async (date) => {
+  useEffect(() => {
+    const loadAttendanceData = async () => {
+      try {
+        const dateKey = getDateKey(selectedDate);
 
-    //get students from backend
-    const studentsResponse = await fetch(`${API_URL}/students`)
+        // Get students
+        const studentsResponse = await fetch(`${API_URL}/students`);
 
-    if (!studentsResponse.ok) {
-      throw new Error('Failed to fetch students');
-    }
+        if (!studentsResponse.ok) {
+          throw new Error('Failed to fetch students');
+        }
 
-    const dateKey = getDateKey(date);
+        const savedStudents = await studentsResponse.json();
 
-    const savedStudents = await studentsResponse.json();
+        // Get attendance for selected date
+        const attendanceResponse = await fetch(
+          `${API_URL}/attendance/date/${dateKey}`
+        );
 
-    // Get attendance records for selected date
-    const attendanceResponse = await fetch(`${API_URL}/attendance/date/${dateKey}`);
+        if (!attendanceResponse.ok) {
+          throw new Error('Failed to fetch attendance');
+        }
 
-    if(!attendanceResponse.ok){
-      throw new Error('Failed to fetch attendance');
-    }
+        const attendanceRecords = await attendanceResponse.json();
 
-    const attendanceRecords = await attendanceResponse.json();
+        // Create lookup
+        const attendanceMap = {};
 
-    // Create a quick lookup
-    const attendanceMap = {};
+        attendanceRecords.forEach((record) => {
+          attendanceMap[record.idNumber] = record.status;
+        });
 
-    attendanceRecords.forEach((record) => {
-      attendanceMap[record.idNumber] = record.status;
-    });
+        // Add attendance status
+        const studentsWithStatus = savedStudents.map((student) => ({
+          ...student,
+          status: attendanceMap[student.idNumber] || 'Absent'
+        }));
 
-    // Add attendance status to every student
-    const studentsWithStatus = savedStudents.map((student) => ({
-      ...student,
-      status: attendanceMap[student.idNumber] || 'Absent'
-    }));
+        setStudents(studentsWithStatus);
 
-    setStudents(studentsWithStatus);
-  };
+      } catch (error) {
+        console.error('Error loading attendance:', error);
+        setStudents([]);
+      }
+    };
 
-  // Load students when page opens
-  useEffect(()=>{
-    loadStudentsForDate(selectedDate);
-  },[selectedDate]);
+    loadAttendanceData();
+  }, [selectedDate]);
 
 
   // Change date
@@ -97,8 +102,6 @@ export default function Attendance() {
 
     setSelectedDate(newDate);
     setCurrentPage(1);
-
-    // loadStudentsForDate(newDate);
   };
 
   // Mark student present

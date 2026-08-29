@@ -5,13 +5,21 @@ import { Search, Filter, Plus, Edit, Trash2, User, X } from 'lucide-react';
 export default function Students() {
   const navigate = useNavigate();
 
-  // Initialize with an empty array instead of local storage
   const [students, setStudents] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [filterStatus, setFilterStatus] = useState('All');
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingStudent, setEditingStudent] = useState(null);
 
-  // 1. Fetch student data from the backend when the page loads
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const studentsPerPage = 10;
+
+  // Reset to page 1 whenever search or filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, filterStatus]);
+
   useEffect(() => {
     fetchStudents();
   }, []);
@@ -31,7 +39,6 @@ export default function Students() {
     }
   };
 
-  // 2. Delete a student via the backend
   const handleDelete = async (idToRemove) => {
     if (window.confirm("Are you sure you want to delete this student?")) {
       try {
@@ -42,7 +49,6 @@ export default function Students() {
         });
 
         if (response.ok) {
-          // If deleted successfully, remove the student from the UI
           setStudents(students.filter(student => student._id !== idToRemove));
         }
       } catch (error) {
@@ -56,7 +62,6 @@ export default function Students() {
     setIsEditModalOpen(true); 
   };
 
-  // 3. Update student data via the backend
   const handleSaveEdit = async (e) => {
     e.preventDefault();
     try {
@@ -80,10 +85,25 @@ export default function Students() {
     }
   };
 
-  const filteredStudents = students.filter((student) => 
-    student.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    student.idNumber?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Filter logic
+  const filteredStudents = students.filter((student) => {
+    const matchesSearch = student.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          student.idNumber?.toLowerCase().includes(searchTerm.toLowerCase());
+                          
+    const matchesFilter = filterStatus === 'All' || (student.payment || 'Pending') === filterStatus;
+    
+    return matchesSearch && matchesFilter;
+  });
+
+  // Pagination calculations
+  const indexOfLastStudent = currentPage * studentsPerPage;
+  const indexOfFirstStudent = indexOfLastStudent - studentsPerPage;
+  const currentStudents = filteredStudents.slice(indexOfFirstStudent, indexOfLastStudent);
+  const totalPages = Math.ceil(filteredStudents.length / studentsPerPage);
+
+  // Pagination navigation handlers
+  const goToNextPage = () => setCurrentPage((prev) => Math.min(prev + 1, totalPages));
+  const goToPrevPage = () => setCurrentPage((prev) => Math.max(prev - 1, 1));
 
   return (
     <div className="flex flex-col h-full bg-white rounded-2xl p-6 shadow-sm relative">
@@ -107,9 +127,20 @@ export default function Students() {
             />
           </div>
           
-          <button className="flex items-center gap-2 px-5 py-2.5 border border-gray-400 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-semibold transition-colors">
-            <Filter size={18} /> Filter
-          </button>
+          <div className="relative flex items-center">
+            <span className="absolute left-3 pointer-events-none text-gray-600">
+              <Filter size={18} />
+            </span>
+            <select 
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+              className="pl-10 pr-8 py-2.5 border border-gray-400 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-semibold transition-colors focus:outline-none cursor-pointer text-gray-700 appearance-none"
+            >
+              <option value="All">All Status</option>
+              <option value="Paid">Paid</option>
+              <option value="Pending">Pending</option>
+            </select>
+          </div>
           
           <button 
             onClick={() => navigate('/students/add')}
@@ -131,13 +162,13 @@ export default function Students() {
               <div className="text-right pr-2">Actions</div>
            </div>
 
-           {filteredStudents.length === 0 ? (
+           {currentStudents.length === 0 ? (
              <div className="text-center py-10 text-gray-500 font-medium">
                No students found.
              </div>
            ) : (
              <div className="space-y-3">
-               {filteredStudents.map((student) => (
+               {currentStudents.map((student) => (
                  <div 
                     key={student._id} 
                     className="grid grid-cols-[0.5fr_1.2fr_1.5fr_1.2fr_0.8fr_0.8fr] items-center px-5 py-3.5 bg-white border border-gray-400 rounded-lg text-sm text-black font-medium hover:shadow-md transition-shadow"
@@ -183,10 +214,35 @@ export default function Students() {
            )}
          </div>
 
+         {/* Pagination Controls */}
          <div className="flex justify-end items-center mt-6 pt-4 border-t border-gray-200 gap-2 flex-shrink-0">
-            <button className="px-3 py-1.5 border border-gray-300 rounded bg-white text-gray-500 hover:bg-gray-100 transition-colors">&lt;</button>
-            <button className="px-3.5 py-1.5 rounded bg-[#4F46E5] text-white font-bold shadow-sm">1</button>
-            <button className="px-3 py-1.5 border border-gray-300 rounded bg-white text-gray-500 hover:bg-gray-100 transition-colors">&gt;</button>
+            <button 
+              onClick={goToPrevPage}
+              disabled={currentPage === 1}
+              className={`px-3 py-1.5 border border-gray-300 rounded transition-colors ${currentPage === 1 ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white text-gray-500 hover:bg-gray-100'}`}
+            >
+              &lt;
+            </button>
+            
+            <div className="flex gap-1">
+              {Array.from({ length: totalPages }, (_, index) => (
+                <button
+                  key={index + 1}
+                  onClick={() => setCurrentPage(index + 1)}
+                  className={`px-3.5 py-1.5 rounded font-bold shadow-sm ${currentPage === index + 1 ? 'bg-[#4F46E5] text-white' : 'bg-white text-gray-600 border border-gray-300 hover:bg-gray-50'}`}
+                >
+                  {index + 1}
+                </button>
+              ))}
+            </div>
+
+            <button 
+              onClick={goToNextPage}
+              disabled={currentPage === totalPages || totalPages === 0}
+              className={`px-3 py-1.5 border border-gray-300 rounded transition-colors ${currentPage === totalPages || totalPages === 0 ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white text-gray-500 hover:bg-gray-100'}`}
+            >
+              &gt;
+            </button>
          </div>
       </div>
 

@@ -62,7 +62,7 @@ export default function AddStudent() {
   };
 
   return (
-    <div className="flex flex-col h-full bg-white rounded-2xl p-8 shadow-sm">
+    <div className="flex flex-col min-h-[calc(100vh-9rem)] bg-white rounded-2xl p-8 shadow-sm">
       
       <div className="mb-8">
         <h2 className="text-3xl font-extrabold text-black mb-1">Add New Student</h2>

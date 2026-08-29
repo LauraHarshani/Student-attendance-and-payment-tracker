@@ -16,10 +16,12 @@ app.use(cors());
 // Import Routes
 const authRoutes = require('./routes/authRoutes');
 const studentRoutes = require('./routes/studentRoutes');
+const dashboardRoutes = require('./routes/Dashboard');
 
 // Use Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/students', studentRoutes); // Added Student API routes here
+app.use('/api/dashboard', dashboardRoutes);
 
 // Database Connection
 mongoose.connect(process.env.MONGO_URI)

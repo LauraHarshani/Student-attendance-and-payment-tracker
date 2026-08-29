@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -9,23 +9,12 @@ import {
   Download
 } from 'lucide-react';
 
-const ATTENDANCE_KEY = 'attendanceHistory';
-
 export default function AttendanceHistory() {
 
     const navigate = useNavigate();
 
-    // Get saved attendance records
-    const [attendanceRecords] = useState(() => {
-        const saved = localStorage.getItem(ATTENDANCE_KEY);
-
-        if (saved) {
-        return JSON.parse(saved);
-        }
-
-        return [];
-    });
-
+    const [attendanceRecords, setAttendanceRecords] = useState([]);
+    const [students, setStudents] = useState([]);
     const [fromDate, setFromDate] = useState('');
     const [toDate, setToDate] = useState('');
     const [searchTerm, setSearchTerm] = useState('');
@@ -33,14 +22,54 @@ export default function AttendanceHistory() {
 
     const recordsPerPage = 8;
 
-    const students = JSON.parse(
-    localStorage.getItem('studentList') || '[]'
-    );
+    const fetchAttendanceHistory = async () => {
+    try {
+        const response = await fetch(
+        'http://localhost:5000/api/attendance/history'
+        );
+
+        if (!response.ok) {
+        throw new Error('Failed to fetch attendance history');
+        }
+
+        const data = await response.json();
+
+        setAttendanceRecords(data);
+
+    } catch (error) {
+        console.error('Error fetching attendance history:', error);
+    }
+    };
+
+    useEffect(() => {
+        fetchStudents();
+        fetchAttendanceHistory();
+    }, []);
+
+    //get student history
+    const fetchStudents = async () => {
+    try {
+        const response = await fetch(
+        'http://localhost:5000/api/students'
+        );
+
+        if (!response.ok) {
+        throw new Error('Failed to fetch students');
+        }
+
+        const data = await response.json();
+
+        setStudents(data);
+
+    } catch (error) {
+        console.error('Error fetching students:', error);
+    }
+    };
 
     // Find student name
-    const getStudentName = (studentId) => {
+    const getStudentName = (idNumber) => {
         const student = students.find(
-        (student) => student.id === studentId
+        (student) => student.idNumber === idNumber
         );
 
         return student ? student.name : 'Unknown Student';
@@ -59,10 +88,10 @@ export default function AttendanceHistory() {
             !toDate || recordDate <= toDate;
 
         // Student search
-        const studentName = getStudentName(record.studentId);
+        const studentName = getStudentName(record.idNumber);
 
         const matchesSearch =
-            `${studentName} ${record.studentId}`
+            `${studentName} ${record.idNumber}`
             .toLowerCase()
             .includes(searchTerm.toLowerCase());
 
@@ -114,6 +143,7 @@ export default function AttendanceHistory() {
         setSearchTerm(e.target.value);
         setCurrentPage(1);
     };
+
     // Format date for table
     const formatDate = (date) => {
         if (!date) return '';
@@ -171,8 +201,8 @@ export default function AttendanceHistory() {
 
         // Table data
         const rows = filteredRecords.map((record) => [
-            getStudentName(record.studentId),
-            record.studentId,
+            getStudentName(record.idNumber),
+            record.idNumber,
 
             formatDate(record.date),
 
@@ -368,16 +398,16 @@ export default function AttendanceHistory() {
                             currentRecords.map((record, index) => (
 
                                 <tr
-                                key={`${record.studentId}-${record.date}-${index}`}
+                                key={`${record.idNumber}-${record.date}-${index}`}
                                 className="border-b border-gray-200"
                                 >
 
                                 <td className="px-5 py-3.5 text-gray-800">
-                                    {getStudentName(record.studentId)}
+                                    {getStudentName(record.idNumber)}
                                 </td>
 
                                 <td className="px-5 py-3.5 text-gray-700">
-                                    {record.studentId}
+                                    {record.idNumber}
                                 </td>
 
                                 <td className="px-5 py-3.5 text-gray-700">

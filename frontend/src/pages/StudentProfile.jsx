@@ -17,7 +17,7 @@ export default function StudentProfile() {
         const token = localStorage.getItem('token');
         const headers = { 'Authorization': `Bearer ${token}` };
 
-        // 1. Fetch Student details from the backend
+        // 1. Fetch Student details
         const studentRes = await fetch(`http://localhost:5000/api/students/${id}`, { headers });
         let studentData = null;
         
@@ -30,20 +30,20 @@ export default function StudentProfile() {
           return;
         }
 
-        // Fetch Attendance and Payments directly using the student's idNumber
-        if (studentData && studentData.idNumber) {
-          // 2. Fetch specific student's Attendance using idNumber
+        if (studentData) {
+          // 2. Fetch Attendance
           const attRes = await fetch(`http://localhost:5000/api/attendance/student/${studentData.idNumber}`, { headers });
           if (attRes.ok) {
             const attData = await attRes.json();
-            setAttendanceRecords(Array.isArray(attData) ? attData : []);
+            setAttendanceRecords(Array.isArray(attData) ? attData : (attData.data ? attData.data : [attData]));
           }
 
-          // 3. Fetch specific student's Payments using idNumber
+          // 3. Fetch Payments - Backend returns { payments: [...] }
           const payRes = await fetch(`http://localhost:5000/api/payments/student/${studentData.idNumber}`, { headers });
           if (payRes.ok) {
             const payData = await payRes.json();
-            setPaymentRecords(Array.isArray(payData) ? payData : []);
+            // Extract the 'payments' array from the backend response
+            setPaymentRecords(payData.payments || []);
           }
         }
 
@@ -63,22 +63,20 @@ export default function StudentProfile() {
 
   // Calculations for Attendance Summary
   const totalDays = attendanceRecords.length;
-  const presentDays = attendanceRecords.filter(record => record.status === 'Present').length;
+  const presentDays = attendanceRecords.filter(record => record?.status === 'Present').length;
   const absences = totalDays - presentDays;
   const attendanceRate = totalDays > 0 ? Math.round((presentDays / totalDays) * 100) + '%' : '0%';
 
   // Calculations for Payment Summary
-  const sortedPayments = [...paymentRecords].sort((a, b) => new Date(b.paymentDate || b.date) - new Date(a.paymentDate || a.date));
+  const sortedPayments = [...paymentRecords].sort((a, b) => new Date(b.paymentDate || b.createdAt) - new Date(a.paymentDate || a.createdAt));
   const latestPayment = sortedPayments.length > 0 ? sortedPayments[0] : null;
   const currentMonth = new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
 
-  // Helper function to format MongoDB ISO dates (YYYY-MM-DD)
   const formatDate = (dateString) => {
     if (!dateString || dateString === 'N/A') return 'N/A';
     return dateString.split('T')[0];
   };
 
-  // Combine API data and UI data for display mapping
   const displayStudent = {
     id: student.idNumber || student._id,
     name: student.name || 'Unknown Student',
@@ -95,7 +93,7 @@ export default function StudentProfile() {
     absences: absences,
     
     paymentStatus: latestPayment ? (latestPayment.status || 'Paid') : (student.payment || 'Pending'),
-    paidDate: latestPayment ? formatDate(latestPayment.paymentDate || latestPayment.date) : '-',
+    paidDate: latestPayment ? formatDate(latestPayment.paymentDate || latestPayment.createdAt) : '-',
     amount: latestPayment ? `LKR ${Number(latestPayment.amount || 0).toLocaleString()}` : 'LKR 0'
   };
 
@@ -113,7 +111,6 @@ export default function StudentProfile() {
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 pb-6">
         
-        {/* Left Column: Student Details */}
         <div className="lg:col-span-6 bg-[#F8F9FA] rounded-2xl p-6 border border-gray-200 flex flex-col items-center">
           <div className="w-24 h-24 rounded-full border-2 border-gray-400 flex items-center justify-center bg-gray-100 text-gray-500 mb-5 shadow-inner">
             <User size={52} strokeWidth={1.5} />
@@ -144,10 +141,8 @@ export default function StudentProfile() {
           </div>
         </div>
 
-        {/* Right Column: Attendance & Payment Summaries */}
         <div className="lg:col-span-6 flex flex-col gap-8">
           
-          {/* Attendance Summary Card */}
           <div className="bg-[#F8F9FA] rounded-2xl p-6 border border-gray-200">
             <h3 className="text-lg font-bold text-gray-800 mb-4">Attendance Summary</h3>
             <div className="bg-white rounded-xl p-5 border border-gray-200 mb-4 flex items-center justify-between shadow-sm">
@@ -170,7 +165,6 @@ export default function StudentProfile() {
             </div>
           </div>
 
-          {/* Payment Summary Card */}
           <div className="bg-[#F8F9FA] rounded-2xl p-6 border border-gray-200 flex flex-col justify-between">
             <h3 className="text-lg font-bold text-gray-800 mb-4">Payment Summary</h3>
             <div className="py-2 mb-4">

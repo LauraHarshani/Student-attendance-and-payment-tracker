@@ -11,11 +11,9 @@ export default function Students() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingStudent, setEditingStudent] = useState(null);
 
-  // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
   const studentsPerPage = 10;
 
-  // Reset to page 1 whenever search or filter changes
   useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm, filterStatus]);
@@ -27,13 +25,38 @@ export default function Students() {
   const fetchStudents = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/students', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      const data = await response.json();
-      if (response.ok) {
-        setStudents(data);
+      const headers = { 'Authorization': `Bearer ${token}` };
+
+      // 1. Fetch Students
+      const studentRes = await fetch('http://localhost:5000/api/students', { headers });
+      let studentsData = [];
+      if (studentRes.ok) {
+        studentsData = await studentRes.json();
       }
+
+      // 2. Fetch Payments to cross-check automatically
+      const paymentRes = await fetch('http://localhost:5000/api/payments', { headers });
+      let paymentsData = [];
+      if (paymentRes.ok) {
+        const payJson = await paymentRes.json();
+        paymentsData = Array.isArray(payJson) ? payJson : (payJson.payments || payJson.data || []);
+      }
+
+      // 3. Combine Data: Automatically set "Paid" if a payment record exists
+      const updatedStudents = studentsData.map(student => {
+        const hasPaid = paymentsData.some(pay => 
+          String(pay.idNumber) === String(student.idNumber) || 
+          String(pay.studentId) === String(student.idNumber) ||
+          String(pay.student) === String(student._id)
+        );
+        return {
+          ...student,
+          displayPayment: hasPaid ? 'Paid' : (student.payment || 'Pending')
+        };
+      });
+
+      setStudents(updatedStudents);
+
     } catch (error) {
       console.error('Error fetching students:', error);
     }
@@ -76,8 +99,8 @@ export default function Students() {
       });
 
       if (response.ok) {
-        const updatedStudent = await response.json();
-        setStudents(students.map((s) => (s._id === updatedStudent._id ? updatedStudent : s)));
+        // Refresh the whole list to keep sync accurate
+        fetchStudents();
         setIsEditModalOpen(false); 
       }
     } catch (error) {
@@ -85,23 +108,20 @@ export default function Students() {
     }
   };
 
-  // Filter logic
   const filteredStudents = students.filter((student) => {
     const matchesSearch = student.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           student.idNumber?.toLowerCase().includes(searchTerm.toLowerCase());
                           
-    const matchesFilter = filterStatus === 'All' || (student.payment || 'Pending') === filterStatus;
+    const matchesFilter = filterStatus === 'All' || (student.displayPayment || 'Pending') === filterStatus;
     
     return matchesSearch && matchesFilter;
   });
 
-  // Pagination calculations
   const indexOfLastStudent = currentPage * studentsPerPage;
   const indexOfFirstStudent = indexOfLastStudent - studentsPerPage;
   const currentStudents = filteredStudents.slice(indexOfFirstStudent, indexOfLastStudent);
   const totalPages = Math.ceil(filteredStudents.length / studentsPerPage);
 
-  // Pagination navigation handlers
   const goToNextPage = () => setCurrentPage((prev) => Math.min(prev + 1, totalPages));
   const goToPrevPage = () => setCurrentPage((prev) => Math.max(prev - 1, 1));
 
@@ -178,8 +198,8 @@ export default function Students() {
                    <div>{student.email}</div>
                    <div>{student.phone}</div>
                    <div className="text-center">
-                     <span className={`px-4 py-1.5 text-white font-bold text-xs rounded-full tracking-wide shadow-sm ${(student.payment || 'Pending') === 'Paid' ? 'bg-[#4CAF50]' : 'bg-red-500'}`}>
-                       {student.payment || 'Pending'}
+                     <span className={`px-4 py-1.5 text-white font-bold text-xs rounded-full tracking-wide shadow-sm ${(student.displayPayment || 'Pending') === 'Paid' ? 'bg-[#4CAF50]' : 'bg-red-500'}`}>
+                       {student.displayPayment || 'Pending'}
                      </span>
                    </div>
                    
@@ -214,7 +234,6 @@ export default function Students() {
            )}
          </div>
 
-         {/* Pagination Controls */}
          <div className="flex justify-end items-center mt-6 pt-4 border-t border-gray-200 gap-2 flex-shrink-0">
             <button 
               onClick={goToPrevPage}

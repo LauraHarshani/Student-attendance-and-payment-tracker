@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   User,
   Eye,
@@ -7,30 +7,39 @@ import {
 
 export default function AdminProfile() {
 
-  // Admin profile data
-  const [adminData, setAdminData] = useState(() => {
+  // --------------------------------------------------
+  // ADMIN PROFILE
+  // --------------------------------------------------
 
-    const savedAdmin = localStorage.getItem("adminProfile");
-
-    if (savedAdmin) {
-      return JSON.parse(savedAdmin);
-    }
-
-    return {
-      username: "Admin",
-      email: "admin@gmail.com",
-      password: "admin123"
-    };
-
+  const [adminData, setAdminData] = useState({
+    name: "",
+    username: "",
+    email: ""
   });
 
 
-  // Change password popup
+  // --------------------------------------------------
+  // LOADING PROFILE
+  // --------------------------------------------------
+
+  const [profileLoading, setProfileLoading] = useState(true);
+
+
+  const [profileError, setProfileError] = useState("");
+
+
+  // --------------------------------------------------
+  // CHANGE PASSWORD POPUP
+  // --------------------------------------------------
+
   const [showPasswordPopup, setShowPasswordPopup] =
     useState(false);
 
 
-  // Password visibility
+  // --------------------------------------------------
+  // PASSWORD VISIBILITY
+  // --------------------------------------------------
+
   const [showCurrentPassword, setShowCurrentPassword] =
     useState(false);
 
@@ -41,7 +50,10 @@ export default function AdminProfile() {
     useState(false);
 
 
-  // Password fields
+  // --------------------------------------------------
+  // PASSWORD DATA
+  // --------------------------------------------------
+
   const [passwordData, setPasswordData] = useState({
     currentPassword: "",
     newPassword: "",
@@ -49,11 +61,100 @@ export default function AdminProfile() {
   });
 
 
-  // Error message
+  // --------------------------------------------------
+  // PASSWORD ERROR / SUCCESS
+  // --------------------------------------------------
+
   const [error, setError] = useState("");
 
+  const [success, setSuccess] = useState("");
 
-  // Open change password popup
+  const [loading, setLoading] = useState(false);
+
+
+  // ==================================================
+  // GET ADMIN PROFILE FROM MONGODB
+  // ==================================================
+
+  useEffect(() => {
+
+    const fetchProfile = async () => {
+
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+
+        setProfileError(
+          "You are not logged in."
+        );
+
+        setProfileLoading(false);
+
+        return;
+      }
+
+
+      try {
+
+        const response = await fetch(
+          "http://localhost:5000/api/auth/profile",
+          {
+            method: "GET",
+
+            headers: {
+              Authorization: `Bearer ${token}`
+            }
+          }
+        );
+
+
+        const data = await response.json();
+
+
+        if (!response.ok) {
+
+          setProfileError(
+            data.message ||
+            "Failed to load profile."
+          );
+
+          return;
+        }
+
+
+        // Data received from MongoDB
+        setAdminData({
+          name: data.name || "",
+          username: data.username || "",
+          email: data.email || ""
+        });
+
+      } catch (error) {
+
+        console.error(error);
+
+        setProfileError(
+          "Server connection failed. Please try again later."
+        );
+
+      } finally {
+
+        setProfileLoading(false);
+
+      }
+
+    };
+
+
+    fetchProfile();
+
+  }, []);
+
+
+  // ==================================================
+  // OPEN PASSWORD POPUP
+  // ==================================================
+
   const openPasswordPopup = () => {
 
     setPasswordData({
@@ -64,16 +165,24 @@ export default function AdminProfile() {
 
     setError("");
 
+    setSuccess("");
+
     setShowCurrentPassword(false);
     setShowNewPassword(false);
     setShowConfirmPassword(false);
 
     setShowPasswordPopup(true);
+
   };
 
 
-  // Close popup
+  // ==================================================
+  // CLOSE PASSWORD POPUP
+  // ==================================================
+
   const closePasswordPopup = () => {
+
+    if (loading) return;
 
     setShowPasswordPopup(false);
 
@@ -84,25 +193,41 @@ export default function AdminProfile() {
     });
 
     setError("");
+
+    setSuccess("");
+
   };
 
 
-  // Handle password input
+  // ==================================================
+  // PASSWORD INPUT
+  // ==================================================
+
   const handlePasswordChange = (e) => {
 
-    const { name, value } = e.target;
+    const {
+      name,
+      value
+    } = e.target;
+
 
     setPasswordData((previous) => ({
       ...previous,
       [name]: value
     }));
 
+
     setError("");
+    setSuccess("");
+
   };
 
 
-  // Update password
-  const handleUpdatePassword = () => {
+  // ==================================================
+  // UPDATE PASSWORD
+  // ==================================================
+
+  const handleUpdatePassword = async () => {
 
     const {
       currentPassword,
@@ -111,29 +236,26 @@ export default function AdminProfile() {
     } = passwordData;
 
 
-    // Check current password
-    if (currentPassword !== adminData.password) {
-
-      setError("Current password is incorrect.");
-
-      return;
-    }
+    setError("");
+    setSuccess("");
 
 
-    // Check empty fields
+    // Empty fields
     if (
       !currentPassword ||
       !newPassword ||
       !confirmPassword
     ) {
 
-      setError("Please fill in all fields.");
+      setError(
+        "Please fill in all fields."
+      );
 
       return;
     }
 
 
-    // Check new password
+    // Password length
     if (newPassword.length < 6) {
 
       setError(
@@ -144,8 +266,10 @@ export default function AdminProfile() {
     }
 
 
-    // Check confirmation
-    if (newPassword !== confirmPassword) {
+    // Confirm password
+    if (
+      newPassword !== confirmPassword
+    ) {
 
       setError(
         "New password and confirm password do not match."
@@ -155,42 +279,209 @@ export default function AdminProfile() {
     }
 
 
-    // Update admin data
-    const updatedAdmin = {
-      ...adminData,
-      password: newPassword
-    };
+    // Get JWT
+    const token = localStorage.getItem("token");
 
 
-    setAdminData(updatedAdmin);
+    if (!token) {
 
-    localStorage.setItem(
-      "adminProfile",
-      JSON.stringify(updatedAdmin)
-    );
+      setError(
+        "Your session has expired. Please login again."
+      );
+
+      return;
+    }
 
 
-    // Close popup
-    setShowPasswordPopup(false);
+    setLoading(true);
 
-    setPasswordData({
-      currentPassword: "",
-      newPassword: "",
-      confirmPassword: ""
-    });
 
-    setError("");
+    try {
 
-    alert("Password updated successfully.");
+      const response = await fetch(
+        "http://localhost:5000/api/auth/change-password",
+        {
+          method: "PUT",
+
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`
+          },
+
+          body: JSON.stringify({
+            currentPassword,
+            newPassword
+          })
+        }
+      );
+
+
+      const data = await response.json();
+
+
+      if (!response.ok) {
+
+        setError(
+          data.message ||
+          "Failed to update password."
+        );
+
+        return;
+      }
+
+
+      setSuccess(
+        "Password updated successfully."
+      );
+
+
+      setPasswordData({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: ""
+      });
+
+
+      setTimeout(() => {
+
+        setShowPasswordPopup(false);
+        setSuccess("");
+
+      }, 1200);
+
+
+    } catch (error) {
+
+      console.error(error);
+
+      setError(
+        "Server connection failed. Please try again later."
+      );
+
+    } finally {
+
+      setLoading(false);
+
+    }
+
   };
 
+
+  // ==================================================
+  // PROFILE LOADING
+  // ==================================================
+
+  if (profileLoading) {
+
+    return (
+
+      <div className="space-y-8">
+
+        <div>
+
+          <h1 className="text-3xl font-bold text-black">
+            Admin Profile
+          </h1>
+
+          <p className="mt-1 text-sm text-gray-500">
+            Loading administrator profile...
+          </p>
+
+        </div>
+
+
+        <div className="
+          mx-auto
+          w-full
+          max-w-3xl
+          rounded-2xl
+          bg-white
+          p-8
+          shadow-sm
+        ">
+
+          <div className="flex justify-center py-10">
+
+            <p className="text-sm text-gray-500">
+              Loading profile...
+            </p>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    );
+
+  }
+
+
+  // ==================================================
+  // PROFILE ERROR
+  // ==================================================
+
+  if (profileError) {
+
+    return (
+
+      <div className="space-y-8">
+
+        <div>
+
+          <h1 className="text-3xl font-bold text-black">
+            Admin Profile
+          </h1>
+
+          <p className="mt-1 text-sm text-gray-500">
+            View and manage your administrator account.
+          </p>
+
+        </div>
+
+
+        <div className="
+          mx-auto
+          w-full
+          max-w-3xl
+          rounded-2xl
+          border
+          border-red-200
+          bg-red-50
+          p-6
+        ">
+
+          <p className="
+            text-sm
+            font-medium
+            text-red-600
+          ">
+
+            {profileError}
+
+          </p>
+
+        </div>
+
+      </div>
+
+    );
+
+  }
+
+
+  // ==================================================
+  // PAGE
+  // ==================================================
 
   return (
 
     <div className="space-y-8">
 
 
-      {/* Page Header */}
+      {/* ============================================ */}
+      {/* PAGE HEADER */}
+      {/* ============================================ */}
 
       <div>
 
@@ -198,21 +489,52 @@ export default function AdminProfile() {
           Admin Profile
         </h1>
 
+        <p className="mt-1 text-sm text-gray-500">
+          View and manage your administrator account.
+        </p>
+
       </div>
 
 
-      {/* Profile Card */}
+      {/* ============================================ */}
+      {/* PROFILE CARD */}
+      {/* ============================================ */}
 
-      <div className="mx-auto w-full max-w-3xl rounded-2xl bg-white p-8 shadow-sm">
+      <div className="
+        mx-auto
+        w-full
+        max-w-3xl
+        rounded-2xl
+        bg-white
+        p-8
+        shadow-sm
+      ">
 
 
         {/* Profile Header */}
 
-        <div className="mb-8 flex items-center justify-center gap-5">
+        <div className="
+          mb-8
+          flex
+          items-center
+          justify-center
+          gap-5
+        ">
+
 
           {/* Avatar */}
 
-          <div className="flex h-20 w-20 items-center justify-center rounded-full border border-gray-800 bg-white">
+          <div className="
+            flex
+            h-20
+            w-20
+            items-center
+            justify-center
+            rounded-full
+            border
+            border-gray-800
+            bg-white
+          ">
 
             <User
               size={48}
@@ -227,12 +549,25 @@ export default function AdminProfile() {
 
           <div>
 
-            <h2 className="text-xl font-bold text-gray-900">
-              {adminData.username}
+            <h2 className="
+              text-xl
+              font-bold
+              text-gray-900
+            ">
+
+              {adminData.username || "Admin"}
+
             </h2>
 
-            <p className="mt-1 text-sm text-gray-700">
+
+            <p className="
+              mt-1
+              text-sm
+              text-gray-700
+            ">
+
               Administrator
+
             </p>
 
           </div>
@@ -240,18 +575,34 @@ export default function AdminProfile() {
         </div>
 
 
-        {/* Profile Details */}
+        {/* ========================================== */}
+        {/* PROFILE DETAILS */}
+        {/* ========================================== */}
 
-        <div className="mx-auto w-full max-w-md space-y-7">
+        <div className="
+          mx-auto
+          w-full
+          max-w-md
+          space-y-7
+        ">
 
 
           {/* Username */}
 
           <div>
 
-            <label className="mb-2 block text-sm font-medium text-gray-900">
+            <label className="
+              mb-2
+              block
+              text-sm
+              font-medium
+              text-gray-900
+            ">
+
               User Name
+
             </label>
+
 
             <input
               type="text"
@@ -263,7 +614,7 @@ export default function AdminProfile() {
                 rounded-lg
                 border
                 border-gray-800
-                bg-white
+                bg-gray-50
                 px-4
                 text-sm
                 text-gray-900
@@ -278,9 +629,18 @@ export default function AdminProfile() {
 
           <div>
 
-            <label className="mb-2 block text-sm font-medium text-gray-900">
+            <label className="
+              mb-2
+              block
+              text-sm
+              font-medium
+              text-gray-900
+            ">
+
               Email
+
             </label>
+
 
             <input
               type="email"
@@ -292,7 +652,7 @@ export default function AdminProfile() {
                 rounded-lg
                 border
                 border-gray-800
-                bg-white
+                bg-gray-50
                 px-4
                 text-sm
                 text-gray-900
@@ -307,9 +667,18 @@ export default function AdminProfile() {
 
           <div>
 
-            <label className="mb-2 block text-sm font-medium text-gray-900">
+            <label className="
+              mb-2
+              block
+              text-sm
+              font-medium
+              text-gray-900
+            ">
+
               Password
+
             </label>
+
 
             <div className="relative">
 
@@ -323,7 +692,7 @@ export default function AdminProfile() {
                   rounded-lg
                   border
                   border-gray-800
-                  bg-white
+                  bg-gray-50
                   px-4
                   pr-12
                   text-sm
@@ -332,8 +701,6 @@ export default function AdminProfile() {
                 "
               />
 
-
-              {/* Eye Icon */}
 
               <EyeOff
                 size={19}
@@ -372,7 +739,9 @@ export default function AdminProfile() {
                 hover:bg-blue-200
               "
             >
+
               Change Password
+
             </button>
 
           </div>
@@ -382,42 +751,58 @@ export default function AdminProfile() {
       </div>
 
 
-      {/* Change Password Popup */}
+      {/* ================================================= */}
+      {/* CHANGE PASSWORD POPUP */}
+      {/* ================================================= */}
 
       {showPasswordPopup && (
 
-        <div
-          className="
-            fixed
-            inset-0
-            z-50
-            flex
-            items-center
-            justify-center
-            bg-black/40
-            px-4
-          "
-        >
+        <div className="
+          fixed
+          inset-0
+          z-50
+          flex
+          items-center
+          justify-center
+          bg-black/40
+          px-4
+        ">
 
-          <div
-            className="
-              w-full
-              max-w-md
-              rounded-2xl
-              bg-white
-              p-7
-              shadow-2xl
-            "
-          >
+
+          <div className="
+            w-full
+            max-w-md
+            rounded-2xl
+            bg-white
+            p-7
+            shadow-2xl
+          ">
 
 
             {/* Popup Header */}
 
             <div className="mb-6">
 
-              <h2 className="text-xl font-bold text-gray-900">
-                Change password
+              <h2 className="
+                text-xl
+                font-bold
+                text-gray-900
+              ">
+
+                Change Password
+
               </h2>
+
+
+              <p className="
+                mt-1
+                text-sm
+                text-gray-500
+              ">
+
+                Update your administrator account password.
+
+              </p>
 
             </div>
 
@@ -431,9 +816,18 @@ export default function AdminProfile() {
 
               <div>
 
-                <label className="mb-2 block text-sm font-medium text-gray-900">
+                <label className="
+                  mb-2
+                  block
+                  text-sm
+                  font-medium
+                  text-gray-900
+                ">
+
                   Current Password
+
                 </label>
+
 
                 <div className="relative">
 
@@ -444,7 +838,9 @@ export default function AdminProfile() {
                         : "password"
                     }
                     name="currentPassword"
-                    value={passwordData.currentPassword}
+                    value={
+                      passwordData.currentPassword
+                    }
                     onChange={handlePasswordChange}
                     placeholder="Enter current password"
                     className="
@@ -464,6 +860,7 @@ export default function AdminProfile() {
                       focus:ring-blue-600
                     "
                   />
+
 
                   <button
                     type="button"
@@ -499,9 +896,18 @@ export default function AdminProfile() {
 
               <div>
 
-                <label className="mb-2 block text-sm font-medium text-gray-900">
+                <label className="
+                  mb-2
+                  block
+                  text-sm
+                  font-medium
+                  text-gray-900
+                ">
+
                   New Password
+
                 </label>
+
 
                 <div className="relative">
 
@@ -512,7 +918,9 @@ export default function AdminProfile() {
                         : "password"
                     }
                     name="newPassword"
-                    value={passwordData.newPassword}
+                    value={
+                      passwordData.newPassword
+                    }
                     onChange={handlePasswordChange}
                     placeholder="Enter new password"
                     className="
@@ -532,6 +940,7 @@ export default function AdminProfile() {
                       focus:ring-blue-600
                     "
                   />
+
 
                   <button
                     type="button"
@@ -567,9 +976,18 @@ export default function AdminProfile() {
 
               <div>
 
-                <label className="mb-2 block text-sm font-medium text-gray-900">
+                <label className="
+                  mb-2
+                  block
+                  text-sm
+                  font-medium
+                  text-gray-900
+                ">
+
                   Confirm Password
+
                 </label>
+
 
                 <div className="relative">
 
@@ -580,7 +998,9 @@ export default function AdminProfile() {
                         : "password"
                     }
                     name="confirmPassword"
-                    value={passwordData.confirmPassword}
+                    value={
+                      passwordData.confirmPassword
+                    }
                     onChange={handlePasswordChange}
                     placeholder="Confirm new password"
                     className="
@@ -600,6 +1020,7 @@ export default function AdminProfile() {
                       focus:ring-blue-600
                     "
                   />
+
 
                   <button
                     type="button"
@@ -635,9 +1056,54 @@ export default function AdminProfile() {
 
               {error && (
 
-                <p className="text-sm font-medium text-red-600">
-                  {error}
-                </p>
+                <div className="
+                  rounded-lg
+                  border
+                  border-red-200
+                  bg-red-50
+                  px-4
+                  py-3
+                ">
+
+                  <p className="
+                    text-sm
+                    font-medium
+                    text-red-600
+                  ">
+
+                    {error}
+
+                  </p>
+
+                </div>
+
+              )}
+
+
+              {/* Success */}
+
+              {success && (
+
+                <div className="
+                  rounded-lg
+                  border
+                  border-green-200
+                  bg-green-50
+                  px-4
+                  py-3
+                ">
+
+                  <p className="
+                    text-sm
+                    font-medium
+                    text-green-700
+                  ">
+
+                    {success}
+
+                  </p>
+
+                </div>
 
               )}
 
@@ -646,7 +1112,15 @@ export default function AdminProfile() {
 
             {/* Buttons */}
 
-            <div className="mt-7 flex justify-end gap-3 border-t border-gray-200 pt-5">
+            <div className="
+              mt-7
+              flex
+              justify-end
+              gap-3
+              border-t
+              border-gray-200
+              pt-5
+            ">
 
 
               {/* Cancel */}
@@ -654,6 +1128,7 @@ export default function AdminProfile() {
               <button
                 type="button"
                 onClick={closePasswordPopup}
+                disabled={loading}
                 className="
                   rounded-lg
                   border
@@ -666,9 +1141,13 @@ export default function AdminProfile() {
                   text-gray-700
                   transition
                   hover:bg-gray-300
+                  disabled:cursor-not-allowed
+                  disabled:opacity-50
                 "
               >
+
                 Cancel
+
               </button>
 
 
@@ -677,6 +1156,7 @@ export default function AdminProfile() {
               <button
                 type="button"
                 onClick={handleUpdatePassword}
+                disabled={loading}
                 className="
                   rounded-lg
                   bg-blue-700
@@ -687,9 +1167,16 @@ export default function AdminProfile() {
                   text-white
                   transition
                   hover:bg-blue-800
+                  disabled:cursor-not-allowed
+                  disabled:opacity-60
                 "
               >
-                Update
+
+                {loading
+                  ? "Updating..."
+                  : "Update"
+                }
+
               </button>
 
             </div>
@@ -703,4 +1190,5 @@ export default function AdminProfile() {
     </div>
 
   );
+
 }

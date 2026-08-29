@@ -1,107 +1,196 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import {Check, DollarSign, History, Search, Users, X} from 'lucide-react';
+import {
+  Check,
+  DollarSign,
+  History,
+  Search,
+  Users,
+  X,
+} from "lucide-react";
 
-const PAYMENT_KEY = "paymentHistory";
-export default function Payments(){
+const API_URL = "http://localhost:5000/api";
 
+export default function Payments() {
   const navigate = useNavigate();
 
-  //lord student data
-  const students = JSON.parse(
-    localStorage.getItem("studentList") || "[]"
-  )
+  // States
 
-  //get current month
+  const [students, setStudents] = useState([]);
+  const [payments, setPayments] = useState([]);
+
+  const [loadingStudents, setLoadingStudents] = useState(true);
+  const [loadingPayments, setLoadingPayments] = useState(true);
+
+  const [searchTerm, setSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const [showPaymentPopup, setShowPaymentPopup] = useState(false);
+  const [showDetailsPopup, setShowDetailsPopup] = useState(false);
+
+  const [selectedStudent, setSelectedStudent] = useState(null);
+  const [selectedPayment, setSelectedPayment] = useState(null);
+
+  const [paymentData, setPaymentData] = useState({
+    paymentMonth: "",
+    paymentDate: "",
+    amount: "",
+  });
+
+  const studentsPerPage = 10;
+
+  // Get current month
+
   const getCurrentMonth = () => {
     return new Date().toLocaleDateString("en-US", {
       month: "long",
-      year: "numeric"
+      year: "numeric",
     });
   };
 
   // Get today's date
+
   const getToday = () => {
-    return new Date().toISOString().split("T")[0];
+    const today = new Date();
+
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, "0");
+    const day = String(today.getDate()).padStart(2, "0");
+
+    return `${year}-${month}-${day}`;
   };
 
-  // Get payment month
+  // Payment months
+
   const getPaymentMonths = () => {
     const currentYear = new Date().getFullYear();
 
     return Array.from({ length: 12 }, (_, index) => {
-      return new Date(currentYear, index, 1).toLocaleDateString("en-US", {
-        month: "long",
-        year: "numeric"
-      });
+      return new Date(currentYear, index, 1).toLocaleDateString(
+        "en-US",
+        {
+          month: "long",
+          year: "numeric",
+        }
+      );
     });
   };
+
   const paymentMonths = getPaymentMonths();
 
-  // Load saved payments
-  const [payments, setPayments] = useState(() => {
-    const savedPayments = localStorage.getItem(PAYMENT_KEY);
+  // Load students
 
-    return savedPayments
-      ? JSON.parse(savedPayments)
-      : [];
-  });
+  useEffect(() => {
+    const loadStudents = async () => {
+      try {
+        setLoadingStudents(true);
 
-  const [showPaymentPopup, setShowPaymentPopup] = useState(false);
-  const [showDetailsPopup, setShowDetailsPopup] = useState(false);
-  const [selectedPayment, setSelectedPayment] = useState(null);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [paymentData, setPaymentData] = useState({
-    studentId: "",
-    paymentMonth: getCurrentMonth(),
-    paymentDate: new Date().toISOString().split("T")[0],
-    amount: ""
-  });
-  const [currentPage, setCurrentPage] = useState(1);
+        const response = await fetch(`${API_URL}/students`);
 
-  const studentsPerPage = 5;
+        if (!response.ok) {
+          throw new Error("Failed to fetch students");
+        }
 
-  //get selected student data
-  const selectedStudent = students.find(
-    (student) => student.id === paymentData.studentId
-  );
+        const data = await response.json();
 
-  //open payment popup
+        setStudents(data);
+      } catch (error) {
+        console.error("Error loading students:", error);
+        setStudents([]);
+
+        alert("Failed to load students.");
+      } finally {
+        setLoadingStudents(false);
+      }
+    };
+
+    loadStudents();
+  }, []);
+
+  // Load payments
+
+  const loadPayments = async () => {
+    try {
+      setLoadingPayments(true);
+
+      const response = await fetch(`${API_URL}/payments`);
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch payments");
+      }
+
+      const data = await response.json();
+
+      setPayments(data.payments || []);
+    } catch (error) {
+      console.error("Error loading payments:", error);
+
+      setPayments([]);
+
+      alert("Failed to load payments.");
+    } finally {
+      setLoadingPayments(false);
+    }
+  };
+
+  useEffect(() => {
+    loadPayments();
+  }, []);
+
+  // Open payment popup
+
   const openPaymentPopup = (student) => {
+    setSelectedStudent(student);
 
     setPaymentData({
-      studentId: student.id,
       paymentMonth: getCurrentMonth(),
-      paymentDate: new Date().toISOString().split("T")[0],
-      amount: ""
+      paymentDate: getToday(),
+      amount: "",
     });
 
     setShowPaymentPopup(true);
   };
 
-  //close payment popup
+  // Close payment popup
+
   const closePaymentPopup = () => {
     setShowPaymentPopup(false);
+    setSelectedStudent(null);
+
+    setPaymentData({
+      paymentMonth: getCurrentMonth(),
+      paymentDate: getToday(),
+      amount: "",
+    });
   };
 
-  // Open payment details popup
-  const openDetailsPopup = (payment) => {
-    setSelectedPayment(payment);
+  // Open payment details
+
+  const openDetailsPopup = (payment, student) => {
+    setSelectedPayment({
+      ...payment,
+      studentName: student?.name || "Unknown Student",
+    });
+
     setShowDetailsPopup(true);
   };
 
-  // Close payment details popup
+  // Close payment details
+
   const closeDetailsPopup = () => {
     setShowDetailsPopup(false);
     setSelectedPayment(null);
   };
 
-  //search students
+  // Search students
+
   const filteredStudents = students.filter((student) =>
-    `${student.name} ${student.id}`
+    `${student.name} ${student.idNumber}`
       .toLowerCase()
       .includes(searchTerm.toLowerCase())
   );
+
+  // Pagination
 
   const totalPages = Math.ceil(
     filteredStudents.length / studentsPerPage
@@ -117,17 +206,36 @@ export default function Payments(){
     indexOfLastStudent
   );
 
-  // Check student has paid for a month
-  const getStudentPayment = (studentId) => {
+  // Get student's payment for current month
+
+  const getStudentPayment = (idNumber) => {
     return payments.find(
       (payment) =>
-        payment.studentId === studentId &&
+        payment.idNumber === idNumber &&
         payment.paymentMonth === getCurrentMonth()
     );
   };
 
+  // Generate invoice number
+
+  const generateInvoiceNumber = () => {
+    const currentYear = new Date().getFullYear();
+
+    const invoiceNumber = `INV-${currentYear}-${String(
+      payments.length + 1
+    ).padStart(3, "0")}`;
+
+    return invoiceNumber;
+  };
+
   // Confirm payment
-  const handleConfirmPayment = () => {
+
+  const handleConfirmPayment = async () => {
+    // Validate student
+    if (!selectedStudent) {
+      alert("Student not selected.");
+      return;
+    }
 
     // Validate amount
     if (
@@ -138,85 +246,91 @@ export default function Payments(){
       return;
     }
 
-    // Validate payment date
+    // Validate date
     if (!paymentData.paymentDate) {
       alert("Please select the payment date.");
+      return;
+    }
+
+    // Validate month
+    if (!paymentData.paymentMonth) {
+      alert("Please select the payment month.");
       return;
     }
 
     // Check duplicate payment
     const alreadyPaid = payments.some(
       (payment) =>
-        payment.studentId === paymentData.studentId &&
+        payment.idNumber === selectedStudent.idNumber &&
         payment.paymentMonth === paymentData.paymentMonth
     );
 
     if (alreadyPaid) {
       alert(
-        `${selectedStudent?.name} has already paid for ${paymentData.paymentMonth}.`
+        `${selectedStudent.name} has already paid for ${paymentData.paymentMonth}.`
       );
+
       return;
     }
 
-    const existingPayments = JSON.parse(
-      localStorage.getItem("paymentHistory") || "[]"
-    );
+    try {
+      const invoiceNumber = generateInvoiceNumber();
 
-    const currentYear = new Date().getFullYear();
+      const payment = {
+        invoiceNumber: invoiceNumber,
 
-    const invoiceNumber = `INV-${currentYear}-${String(existingPayments.length + 1).padStart(3, "0")}`;
+        idNumber: selectedStudent.idNumber,
 
-    // Create new payment
-    const newPayment = {
-      id: Date.now(),
+        amount: Number(paymentData.amount),
 
-      invoiceNumber: invoiceNumber,
+        paymentMonth: paymentData.paymentMonth,
 
-      studentId: paymentData.studentId,
+        paymentDate: paymentData.paymentDate,
 
-      studentName: selectedStudent?.name || "Unknown Student",
+        status: "Paid",
+      };
 
-      paymentMonth: paymentData.paymentMonth,
+      const response = await fetch(`${API_URL}/payments`, {
+        method: "POST",
 
-      paymentDate: paymentData.paymentDate,
+        headers: {
+          "Content-Type": "application/json",
+        },
 
-      amount: Number(paymentData.amount),
+        body: JSON.stringify(payment),
+      });
 
-      status: "Paid"
-    };
+      const data = await response.json();
 
-    // Add new payment
-    const updatedPayments = [
-      ...payments,
-      newPayment
-    ];
+      if (!response.ok) {
+        throw new Error(
+          data.message || "Failed to create payment"
+        );
+      }
 
-    // Save to state
-    setPayments(updatedPayments);
+      alert("Payment recorded successfully!");
 
-    // Save to localStorage
-    localStorage.setItem(
-      PAYMENT_KEY,
-      JSON.stringify(updatedPayments)
-    );
+      // Reload payments from MongoDB
+      await loadPayments();
 
-    // Close popup
-    setShowPaymentPopup(false);
+      // Close popup
+      closePaymentPopup();
+    } catch (error) {
+      console.error("Error creating payment:", error);
 
-    // Reset form
-    setPaymentData({
-      studentId: "",
-      paymentMonth: getCurrentMonth(),
-      paymentDate: getToday(),
-      amount: ""
-    });
+      alert(
+        error.message || "Failed to record payment."
+      );
+    }
   };
 
   // Summary
+
   const currentMonth = getCurrentMonth();
 
   const currentMonthPayments = payments.filter(
-    (payment) => payment.paymentMonth === currentMonth
+    (payment) =>
+      payment.paymentMonth === currentMonth
   );
 
   const paidStudents = currentMonthPayments.length;
@@ -233,56 +347,112 @@ export default function Payments(){
   );
 
   // Format date
+
   const formatDate = (date) => {
-    if (!date) return "-";
+    if (!date) {
+      return "-";
+    }
+
+    const dateParts = date.split("-");
+
+    if (dateParts.length !== 3) {
+      return date;
+    }
+
+    const year = Number(dateParts[0]);
+    const month = Number(dateParts[1]);
+    const day = Number(dateParts[2]);
 
     return new Date(
-      `${date}T00:00:00`
+      year,
+      month - 1,
+      day
     ).toLocaleDateString("en-GB", {
       day: "numeric",
       month: "long",
-      year: "numeric"
+      year: "numeric",
     });
   };
 
-  return(
+  // Loading
+
+  if (loadingStudents || loadingPayments) {
+    return (
+      <div className="flex min-h-[400px] items-center justify-center">
+        <p className="text-sm text-gray-500">
+          Loading payments...
+        </p>
+      </div>
+    );
+  }
+
+
+  return (
     <div className="space-y-8">
 
-      {/*Header title*/}
+      {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-black">Payments</h1>
+
+        <div>
+          <h1 className="text-3xl font-bold text-black">
+            Payments
+          </h1>
+
+          <p className="mt-1 text-sm text-gray-600">
+            Manage student payments
+          </p>
+        </div>
 
         <button
-          onClick={() => navigate("/payment/history")}
+          type="button"
+          onClick={() =>
+            navigate("/payment/history")
+          }
           className="flex items-center gap-2 rounded-lg border border-blue-600 px-4 py-3 text-sm font-semibold text-blue-700 transition hover:bg-blue-50"
         >
-          <History size={18}/>
+          <History size={18} />
           History
         </button>
+
       </div>
 
-      {/*Summary cards*/}
+
+      {/* Summary Cards */}
+
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
 
-        {/*Total*/}
+        {/* Total */}
+
         <div className="rounded-2xl bg-blue-100 p-5">
+
           <div className="flex items-center gap-3">
 
-            <Users size={22}
+            <Users
+              size={22}
               className="text-blue-950"
             />
 
-            <span className="text-sm font-semibold text-blue-950">Total</span>
+            <span className="text-sm font-semibold text-blue-950">
+              Total
+            </span>
+
           </div>
 
-          <p className="mt-5 text-2xl font-bold text-blue-950">{students.length}</p>
+          <p className="mt-5 text-2xl font-bold text-blue-950">
+            {students.length}
+          </p>
 
-          <p className="mt-2 text-xs font-medium text-blue-950">Students registered</p>
+          <p className="mt-2 text-xs font-medium text-blue-950">
+            Students registered
+          </p>
 
         </div>
 
-        {/*Paid*/}
+
+        {/* Paid */}
+
         <div className="rounded-2xl bg-green-100 p-5">
+
           <div className="flex items-center gap-3">
 
             <Check
@@ -290,18 +460,27 @@ export default function Payments(){
               className="text-green-900"
             />
 
-            <span className="text-sm font-semibold text-green-900">Paid</span>
+            <span className="text-sm font-semibold text-green-900">
+              Paid
+            </span>
+
           </div>
 
           <p className="mt-5 text-2xl font-bold text-green-900">
             {paidStudents}
           </p>
 
-          <p className="mt-2 text-xs font-medium text-green-900">Payments received</p>
+          <p className="mt-2 text-xs font-medium text-green-900">
+            Payments received
+          </p>
+
         </div>
 
-        {/*Pending payments*/}
+
+        {/* Pending */}
+
         <div className="rounded-2xl bg-red-100 p-5">
+
           <div className="flex items-center gap-3">
 
             <X
@@ -309,18 +488,27 @@ export default function Payments(){
               className="text-red-900"
             />
 
-            <span className="text-sm font-semibold text-red-900">Pending</span>
+            <span className="text-sm font-semibold text-red-900">
+              Pending
+            </span>
+
           </div>
 
           <p className="mt-5 text-2xl font-bold text-red-900">
             {pendingStudents}
           </p>
 
-          <p className="mt-2 text-xs font-medium text-red-900">Awaiting payments</p>
+          <p className="mt-2 text-xs font-medium text-red-900">
+            Awaiting payments
+          </p>
+
         </div>
 
-        {/*Total Collected*/}
+
+        {/* Total Collected */}
+
         <div className="rounded-2xl bg-teal-100 p-5">
+
           <div className="flex items-center gap-3">
 
             <DollarSign
@@ -328,23 +516,38 @@ export default function Payments(){
               className="text-teal-900"
             />
 
-            <span className="text-sm font-semibold text-teal-900">Total Collected</span>
+            <span className="text-sm font-semibold text-teal-900">
+              Total Collected
+            </span>
+
           </div>
 
           <p className="mt-5 text-2xl font-bold text-teal-900">
             Rs. {totalCollected.toLocaleString()}
           </p>
 
-          <p className="mt-2 text-xs font-medium text-teal-900">Successfully received</p>
+          <p className="mt-2 text-xs font-medium text-teal-900">
+            Successfully received
+          </p>
+
         </div>
+
       </div>
 
-      {/*Payment details section*/}
-      <div className="mt-8">
-        <h2 className="mb-6 text-lg font-semibold text-black">Students payments for this month</h2>
 
-        {/*Search bar*/}
+      {/* Payment Section */}
+
+      <div className="mt-8">
+
+        <h2 className="mb-6 text-lg font-semibold text-black">
+          Students payments for this month
+        </h2>
+
+
+        {/* Search */}
+
         <div className="relative mb-6 w-full sm:w-80">
+
           <Search
             size={18}
             className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"
@@ -360,229 +563,272 @@ export default function Payments(){
             }}
             className="h-10 w-full rounded-md border border-gray-300 bg-white pl-10 pr-4 text-sm text-gray-700 outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
           />
+
         </div>
 
-        {/*Table*/}
+
+        {/* Table */}
+
         <div className="overflow-x-auto">
+
           <table className="w-full border-collapse text-sm">
+
             <thead>
+
               <tr className="border-y border-gray-300 bg-gray-50 text-left">
 
                 <th className="px-3 py-3 font-semibold text-gray-800">
                   Student Name
                 </th>
+
                 <th className="px-3 py-3 font-semibold text-gray-800">
                   Student ID
                 </th>
+
                 <th className="px-3 py-3 font-semibold text-gray-800">
                   Payment Date
                 </th>
+
                 <th className="px-3 py-3 font-semibold text-gray-800">
                   Amount (Rs)
                 </th>
+
                 <th className="px-3 py-3 font-semibold text-gray-800">
                   Status
                 </th>
+
                 <th className="px-3 py-3 text-center font-semibold text-gray-800">
                   Action
                 </th>
+
               </tr>
+
             </thead>
+
+
             <tbody>
 
-              {filteredStudents.length > 0 ? (
+              {currentStudents.map((student) => {
 
-                currentStudents.map((student) => {
-
-                  const studentPayment =
-                    getStudentPayment(student.id);
-
-                  const isPaid = Boolean(studentPayment);
-
-                  return (
-
-                    <tr
-                      key={student.id}
-                      className="border-b border-gray-200"
-                    >
-
-                      {/* Student Name */}
-
-                      <td className="px-3 py-4 text-gray-800">
-                        {student.name}
-                      </td>
-
-
-                      {/* Student ID */}
-
-                      <td className="px-3 py-4 text-gray-700">
-                        {student.id}
-                      </td>
-
-
-                      {/* Payment Date */}
-
-                      <td className="px-3 py-4 text-gray-700">
-
-                        {isPaid
-                          ? formatDate(
-                              studentPayment.paymentDate
-                            )
-                          : "-"
-                        }
-
-                      </td>
-
-
-                      {/* Amount */}
-
-                      <td className="px-3 py-4 text-gray-700">
-
-                        {isPaid
-                          ? Number(
-                              studentPayment.amount
-                            ).toLocaleString()
-                          : "-"
-                        }
-
-                      </td>
-
-
-                      {/* Status */}
-
-                      <td className="px-3 py-4">
-
-                        {isPaid ? (
-
-                          <span className="inline-flex rounded-full bg-green-100 px-6 py-1 text-xs font-medium text-green-700">
-                            Paid
-                          </span>
-
-                        ) : (
-
-                          <span className="inline-flex rounded-full bg-red-100 px-3 py-1 text-xs font-medium text-red-700">
-                            Pending
-                          </span>
-
-                        )}
-
-                      </td>
-
-
-                      {/* Action */}
-
-                      <td className="px-3 py-4 text-center">
-
-                        {isPaid ? (
-
-                          <button
-                            type="button"
-                            onClick={()=> openDetailsPopup(studentPayment)}
-                            className="w-18 rounded-lg border border-blue-600 px-5 py-2 text-xs font-semibold text-blue-700 transition hover:bg-blue-50"
-                          >
-                            View
-                          </button>
-
-                        ) : (
-
-                          <button
-                            type="button"
-                            onClick={() => openPaymentPopup(student)}
-                            className="w-18 rounded-lg bg-blue-700 px-5 py-2 text-xs font-semibold text-white transition hover:bg-blue-800"
-                          >
-                            Pay
-                          </button>
-
-                        )}
-
-                      </td>
-
-                    </tr>
-
+                const studentPayment =
+                  getStudentPayment(
+                    student.idNumber
                   );
 
-                })
+                const isPaid =
+                  Boolean(studentPayment);
 
-              ) : (
+                return (
 
-                <tr>
-
-                  <td
-                    colSpan="6"
-                    className="py-10 text-center text-sm text-gray-500"
+                  <tr
+                    key={student.idNumber}
+                    className="border-b border-gray-200"
                   >
-                    No students found.
-                  </td>
 
-                </tr>
+                    {/* Student Name */}
 
-              )}
+                    <td className="px-3 py-4 text-gray-800">
+                      {student.name}
+                    </td>
+
+
+                    {/* Student ID */}
+
+                    <td className="px-3 py-4 text-gray-700">
+                      {student.idNumber}
+                    </td>
+
+
+                    {/* Payment Date */}
+
+                    <td className="px-3 py-4 text-gray-700">
+
+                      {isPaid
+                        ? formatDate(
+                            studentPayment.paymentDate
+                          )
+                        : "-"
+                      }
+
+                    </td>
+
+
+                    {/* Amount */}
+
+                    <td className="px-3 py-4 text-gray-700">
+
+                      {isPaid
+                        ? Number(
+                            studentPayment.amount
+                          ).toLocaleString()
+                        : "-"
+                      }
+
+                    </td>
+
+
+                    {/* Status */}
+
+                    <td className="px-3 py-4">
+
+                      {isPaid ? (
+
+                        <span className="inline-flex rounded-full bg-green-100 px-6 py-1 text-xs font-medium text-green-700">
+                          Paid
+                        </span>
+
+                      ) : (
+
+                        <span className="inline-flex rounded-full bg-red-100 px-3 py-1 text-xs font-medium text-red-700">
+                          Pending
+                        </span>
+
+                      )}
+
+                    </td>
+
+
+                    {/* Action */}
+
+                    <td className="px-3 py-4 text-center">
+
+                      {isPaid ? (
+
+                        <button
+                          type="button"
+                          onClick={() =>
+                            openDetailsPopup(
+                              studentPayment,
+                              student
+                            )
+                          }
+                          className="rounded-lg border border-blue-600 px-5 py-2 text-xs font-semibold text-blue-700 transition hover:bg-blue-50"
+                        >
+                          View
+                        </button>
+
+                      ) : (
+
+                        <button
+                          type="button"
+                          onClick={() =>
+                            openPaymentPopup(student)
+                          }
+                          className="rounded-lg bg-blue-700 px-5 py-2 text-xs font-semibold text-white transition hover:bg-blue-800"
+                        >
+                          Pay
+                        </button>
+
+                      )}
+
+                    </td>
+
+                  </tr>
+
+                );
+              })}
 
             </tbody>
+
           </table>
 
-          {/* Pagination */}
-          {totalPages > 0 && (
-            <div className="mt-5 flex items-center justify-end gap-2">
 
-              {/* Previous */}
-              <button
-                onClick={() =>
-                  setCurrentPage((page) => Math.max(page - 1, 1))
-                }
-                disabled={currentPage === 1}
-                className="px-3 py-1.5 border border-gray-300 rounded bg-white text-gray-500 hover:bg-gray-100 transition-colors"
-              >
-                ‹
-              </button>
+          {/* No students */}
 
-              {/* Page Numbers */}
-              {Array.from(
-                { length: totalPages },
-                (_, index) => index + 1
-              ).map((page) => (
+          {filteredStudents.length === 0 && (
 
-                <button
-                  key={page}
-                  onClick={() => setCurrentPage(page)}
-                  className={`px-3.5 py-1.5 rounded font-medium transition-colors ${
-                    currentPage === page
-                      ? "bg-[#4F46E5] font-bold text-white shadow-sm"
-                      : "border border-gray-300 bg-white text-gray-700 hover:bg-gray-100"
-                  }`}
-                >
-                  {page}
-                </button>
-
-              ))}
-
-              {/* Next */}
-              <button
-                onClick={() =>
-                  setCurrentPage((page) =>
-                    Math.min(page + 1, totalPages)
-                  )
-                }
-                disabled={currentPage === totalPages}
-                className="px-3 py-1.5 border border-gray-300 rounded bg-white text-gray-500 hover:bg-gray-100 transition-colors"
-              >
-                ›
-              </button>
-
+            <div className="py-10 text-center text-sm text-gray-500">
+              No students found.
             </div>
+
           )}
+
         </div>
+
+
+        {/* Pagination */}
+
+        {totalPages > 0 && (
+
+          <div className="mt-5 flex items-center justify-end gap-2">
+
+            {/* Previous */}
+
+            <button
+              type="button"
+              onClick={() =>
+                setCurrentPage((page) =>
+                  Math.max(page - 1, 1)
+                )
+              }
+              disabled={currentPage === 1}
+              className="rounded border border-gray-300 bg-white px-3 py-1.5 text-gray-500 transition-colors hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              ‹
+            </button>
+
+
+            {/* Page Numbers */}
+
+            {Array.from(
+              { length: totalPages },
+              (_, index) => index + 1
+            ).map((page) => (
+
+              <button
+                key={page}
+                type="button"
+                onClick={() =>
+                  setCurrentPage(page)
+                }
+                className={`rounded px-3.5 py-1.5 font-medium transition-colors ${
+                  currentPage === page
+                    ? "bg-[#4F46E5] font-bold text-white shadow-sm"
+                    : "border border-gray-300 bg-white text-gray-700 hover:bg-gray-100"
+                }`}
+              >
+                {page}
+              </button>
+
+            ))}
+
+
+            {/* Next */}
+
+            <button
+              type="button"
+              onClick={() =>
+                setCurrentPage((page) =>
+                  Math.min(
+                    page + 1,
+                    totalPages
+                  )
+                )
+              }
+              disabled={
+                currentPage === totalPages
+              }
+              className="rounded border border-gray-300 bg-white px-3 py-1.5 text-gray-500 transition-colors hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              ›
+            </button>
+
+          </div>
+
+        )}
+
       </div>
 
-      {/*payment popup*/}
-      {showPaymentPopup && (
+
+      {/* Record Payment Popup */}
+
+      {showPaymentPopup && selectedStudent && (
 
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
 
           <div className="w-full max-w-lg rounded-2xl bg-white p-7 shadow-2xl">
 
-
-            {/* Popup Header */}
+            {/* Header */}
 
             <div className="mb-6">
 
@@ -601,7 +847,6 @@ export default function Payments(){
 
             <div className="space-y-5">
 
-
               {/* Student Name */}
 
               <div>
@@ -612,7 +857,9 @@ export default function Payments(){
 
                 <input
                   type="text"
-                  value={selectedStudent?.name || ""}
+                  value={
+                    selectedStudent.name || ""
+                  }
                   disabled
                   className="h-11 w-full rounded-lg border border-gray-300 bg-gray-100 px-4 text-sm text-gray-700"
                 />
@@ -630,57 +877,83 @@ export default function Payments(){
 
                 <input
                   type="text"
-                  value={paymentData.studentId}
+                  value={
+                    selectedStudent.idNumber || ""
+                  }
                   disabled
                   className="h-11 w-full rounded-lg border border-gray-300 bg-gray-100 px-4 text-sm text-gray-700"
                 />
 
               </div>
 
+
+              {/* Month + Date */}
+
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
 
                 {/* Payment Month */}
+
                 <div>
+
                   <label className="mb-2 block text-sm font-semibold text-gray-800">
                     Payment Month
                   </label>
 
                   <select
-                    value={paymentData.paymentMonth}
+                    value={
+                      paymentData.paymentMonth
+                    }
                     onChange={(e) =>
                       setPaymentData({
                         ...paymentData,
-                        paymentMonth: e.target.value
+                        paymentMonth:
+                          e.target.value,
                       })
                     }
                     className="h-11 w-full rounded-lg border border-gray-300 bg-white px-4 text-sm text-gray-700 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                   >
-                    {paymentMonths.map((month)=>(
-                      <option key={month} value={month}>
-                        {month}
-                      </option>
-                    ))}
+
+                    {paymentMonths.map(
+                      (month) => (
+
+                        <option
+                          key={month}
+                          value={month}
+                        >
+                          {month}
+                        </option>
+
+                      )
+                    )}
+
                   </select>
+
                 </div>
 
 
                 {/* Payment Date */}
+
                 <div>
+
                   <label className="mb-2 block text-sm font-semibold text-gray-800">
                     Payment Date
                   </label>
 
                   <input
                     type="date"
-                    value={paymentData.paymentDate}
+                    value={
+                      paymentData.paymentDate
+                    }
                     onChange={(e) =>
                       setPaymentData({
                         ...paymentData,
-                        paymentDate: e.target.value
+                        paymentDate:
+                          e.target.value,
                       })
                     }
                     className="h-11 w-full rounded-lg border border-gray-300 bg-white px-4 text-sm text-gray-700 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                   />
+
                 </div>
 
               </div>
@@ -702,7 +975,7 @@ export default function Payments(){
                   onChange={(e) =>
                     setPaymentData({
                       ...paymentData,
-                      amount: e.target.value
+                      amount: e.target.value,
                     })
                   }
                   className="h-11 w-full rounded-lg border border-gray-300 bg-white px-4 text-sm text-gray-700 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
@@ -712,9 +985,10 @@ export default function Payments(){
 
             </div>
 
-            <div className="mt-7 flex justify-end gap-3 border-t border-gray-200 pt-5">
 
-              {/* Cancel */}
+            {/* Buttons */}
+
+            <div className="mt-7 flex justify-end gap-3 border-t border-gray-200 pt-5">
 
               <button
                 type="button"
@@ -723,8 +997,6 @@ export default function Payments(){
               >
                 Cancel
               </button>
-
-              {/* Confirm */}
 
               <button
                 type="button"
@@ -741,14 +1013,18 @@ export default function Payments(){
         </div>
 
       )}
+
+
       {/* Payment Details Popup */}
+
       {showDetailsPopup && selectedPayment && (
 
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
 
           <div className="w-full max-w-md rounded-2xl bg-white p-7 shadow-2xl">
 
-            {/* Popup Header */}
+            {/* Header */}
+
             <div className="mb-6">
 
               <h2 className="text-2xl font-bold text-gray-900">
@@ -758,10 +1034,27 @@ export default function Payments(){
             </div>
 
 
-            {/* Payment Details */}
+            {/* Details */}
+
             <div className="space-y-0">
 
+              {/* Invoice Number */}
+
+              <div className="flex items-center border-b border-gray-200 py-4">
+
+                <span className="w-1/2 text-sm font-semibold text-gray-800">
+                  Invoice Number
+                </span>
+
+                <span className="w-1/2 text-sm text-gray-700">
+                  {selectedPayment.invoiceNumber}
+                </span>
+
+              </div>
+
+
               {/* Student Name */}
+
               <div className="flex items-center border-b border-gray-200 py-4">
 
                 <span className="w-1/2 text-sm font-semibold text-gray-800">
@@ -776,6 +1069,7 @@ export default function Payments(){
 
 
               {/* Student ID */}
+
               <div className="flex items-center border-b border-gray-200 py-4">
 
                 <span className="w-1/2 text-sm font-semibold text-gray-800">
@@ -783,13 +1077,14 @@ export default function Payments(){
                 </span>
 
                 <span className="w-1/2 text-sm text-gray-700">
-                  {selectedPayment.studentId}
+                  {selectedPayment.idNumber}
                 </span>
 
               </div>
 
 
               {/* Amount */}
+
               <div className="flex items-center border-b border-gray-200 py-4">
 
                 <span className="w-1/2 text-sm font-semibold text-gray-800">
@@ -797,13 +1092,17 @@ export default function Payments(){
                 </span>
 
                 <span className="w-1/2 text-sm text-gray-700">
-                  Rs. {selectedPayment.amount}
+                  Rs.{" "}
+                  {Number(
+                    selectedPayment.amount
+                  ).toLocaleString()}
                 </span>
 
               </div>
 
 
               {/* Month */}
+
               <div className="flex items-center border-b border-gray-200 py-4">
 
                 <span className="w-1/2 text-sm font-semibold text-gray-800">
@@ -818,6 +1117,7 @@ export default function Payments(){
 
 
               {/* Payment Date */}
+
               <div className="flex items-center border-b border-gray-200 py-4">
 
                 <span className="w-1/2 text-sm font-semibold text-gray-800">
@@ -825,13 +1125,16 @@ export default function Payments(){
                 </span>
 
                 <span className="w-1/2 text-sm text-gray-700">
-                  {selectedPayment.paymentDate}
+                  {formatDate(
+                    selectedPayment.paymentDate
+                  )}
                 </span>
 
               </div>
 
 
               {/* Status */}
+
               <div className="flex items-center py-4">
 
                 <span className="w-1/2 text-sm font-semibold text-gray-800">
@@ -851,7 +1154,8 @@ export default function Payments(){
             </div>
 
 
-            {/* Close Button */}
+            {/* Close */}
+
             <div className="mt-6 flex justify-end border-t border-gray-200 pt-5">
 
               <button
@@ -869,6 +1173,7 @@ export default function Payments(){
         </div>
 
       )}
+
     </div>
-  )
+  );
 }

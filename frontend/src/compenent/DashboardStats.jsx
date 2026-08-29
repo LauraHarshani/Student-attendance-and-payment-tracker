@@ -21,7 +21,7 @@ const DashboardStats = () => {
     return `${year}-${month}-${day}`;
   };
 
-  // Get current month in "August 2026" format
+  // Get current month
   const getCurrentMonth = () => {
     return new Date().toLocaleDateString("en-US", {
       month: "long",

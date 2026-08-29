@@ -208,11 +208,6 @@ export default function PaymentHistory() {
         payment.status === statusFilter;
 
 
-      // Date
-      const paymentDate =
-        payment.paymentDate || "";
-
-
       const matchesFromDate =
         !fromDate ||
         !payment.paymentDate ||
@@ -518,7 +513,7 @@ export default function PaymentHistory() {
             />
 
             <span className="text-sm font-semibold text-blue-950">
-              Total Students
+              Total Data
             </span>
 
           </div>

@@ -19,7 +19,7 @@ export default function Attendance() {
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
 
-  const studentsPerPage = 8;
+  const studentsPerPage = 10;
 
   // Format date to store
 

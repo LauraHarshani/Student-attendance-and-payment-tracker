@@ -1,16 +1,48 @@
-# React + Vite
+# Student Attendance & Payment Tracker
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A comprehensive web application built with the MERN stack to manage student registrations, track daily attendance, and monitor fee payments efficiently.
 
-Currently, two official plugins are available:
+## 🚀 Features
+* **Admin Dashboard:** Quick overview of total students, present students today, and monthly income stats.
+* **Student Management:** Securely add, update, view, and delete student profiles (CRUD).
+* **Attendance Tracking:** Mark daily student attendance and view individual attendance history.
+* **Payment Handling:** Record student fee payments and view comprehensive payment histories.
+* **Secure Authentication:** JWT-based login system for admin data protection.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## 💻 Tech Stack
+* **Frontend:** React.js, Tailwind CSS, Vite
+* **Backend:** Node.js, Express.js, JWT (JSON Web Tokens)
+* **Database:** MongoDB Atlas (Mongoose)
 
-## React Compiler
+## 🛠️ Getting Started
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+Follow these steps to run the project on your local machine.
 
-## Expanding the ESLint configuration
+### 1. Clone the repository
+`git clone https://github.com/LauraHarshani/Student-attendance-and-payment-tracker.git`
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+### 2. Setup Backend
+Open a terminal and navigate to the backend directory:
+`cd backend`
+`npm install`
+
+Create a `.env` file in the `backend` folder and add your environment variables:
+`PORT=5000`
+`MONGO_URI=your_mongodb_connection_string`
+`JWT_SECRET=your_jwt_secret_key`
+
+Start the backend server:
+`npm run dev`
+
+### 3. Setup Frontend
+Open a new terminal and navigate to the frontend directory:
+`cd frontend`
+`npm install`
+
+Start the frontend development server:
+`npm run dev`
+
+## 👥 Contributors
+* Harshani (Express server, Auth API, Student CRUD API, Frontend/UI, Integration)
+* Minidu (Attendance API, Payment API, Admin Profile API,Frontend/UI ,Integration)
+* Nirmal (Database Schema, Validation, Aggregation APIs ,Frontend/UI)

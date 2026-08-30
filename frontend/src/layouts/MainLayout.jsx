@@ -213,7 +213,11 @@ export default function MainLayout() {
               )}
             </div>
 
-            <div className="w-11 h-11 rounded-full bg-[#0A1128] shadow-md text-white flex items-center justify-center font-bold text-xl cursor-pointer hover:bg-blue-700 transition-colors">
+            {/* Admin Avatar added onClick */}
+            <div 
+              onClick={() => navigate('/admin-profile')}
+              className="w-11 h-11 rounded-full bg-[#0A1128] shadow-md text-white flex items-center justify-center font-bold text-xl cursor-pointer hover:bg-blue-700 transition-colors"
+            >
               {userInitial}
             </div>
           </div>

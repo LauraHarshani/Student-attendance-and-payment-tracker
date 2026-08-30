@@ -159,8 +159,6 @@ export default function PaymentHistory() {
   // Create payment history records
 
   const monthlyRecords = useMemo(() => {
-   
-
     if (monthFilter === "All") {
       return payments.map((payment) => ({
         ...payment,
@@ -180,11 +178,17 @@ export default function PaymentHistory() {
         ? currentMonth
         : monthFilter;
 
-    return students.map((student) => {
-      const payment = payments.find(
+    // Get payments for the selected month
+    const selectedMonthPayments = payments.filter(
+      (payment) =>
+        payment.paymentMonth === selectedMonth
+    );
+
+    // Create records for current students
+    const studentRecords = students.map((student) => {
+      const payment = selectedMonthPayments.find(
         (payment) =>
-          payment.idNumber === student.idNumber &&
-          payment.paymentMonth === selectedMonth
+          payment.idNumber === student.idNumber
       );
 
       // Paid
@@ -227,6 +231,36 @@ export default function PaymentHistory() {
         status: "Pending",
       };
     });
+
+    // Find payments belonging to deleted students
+    const deletedStudentPayments =
+      selectedMonthPayments.filter(
+        (payment) =>
+          !students.some(
+            (student) =>
+              student.idNumber === payment.idNumber
+          )
+      );
+
+    // Add deleted student payments
+    const deletedStudentRecords =
+      deletedStudentPayments.map((payment) => ({
+        ...payment,
+
+        studentName: "Deleted Student",
+
+        idNumber: payment.idNumber,
+
+        paymentMonth:
+          payment.paymentMonth || selectedMonth,
+
+        status: payment.status || "Paid",
+      }));
+
+    return [
+      ...studentRecords,
+      ...deletedStudentRecords,
+    ];
   }, [
     payments,
     students,
@@ -350,7 +384,6 @@ export default function PaymentHistory() {
       indexOfLastRecord
     );
 
-
   // Filter handlers
 
   const handleSearch = (e) => {
@@ -377,7 +410,6 @@ export default function PaymentHistory() {
     setToDate(e.target.value);
     setCurrentPage(1);
   };
-
 
   // Download report
 

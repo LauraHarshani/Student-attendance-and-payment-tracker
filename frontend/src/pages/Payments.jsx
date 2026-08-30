@@ -527,7 +527,7 @@ export default function Payments() {
           </p>
 
           <p className="mt-2 text-xs font-medium text-teal-900">
-            Successfully received
+            For this month
           </p>
 
         </div>

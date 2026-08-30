@@ -13,6 +13,8 @@ import Login from './pages/Login';
 import PaymentHistory from './pages/PaymentHistory';
 import ForgotPassword from './pages/ForgotPassword';
 
+import ProtectedRoute from './routes/ProtectedRoute';
+
 function App() {
   return (
     <Router>
@@ -22,18 +24,19 @@ function App() {
         {/* Forgot Password Page  */}
         <Route path="/forgot-password" element={<ForgotPassword />} />
 
-        {/* Main Pages */}
-        <Route path="/" element={<MainLayout />}>
-          <Route index element={<Dashboard />} />
-          <Route path="students" element={<Students />} />
-          <Route path="students/add" element={<AddStudent />} />
-          <Route path="students/profile/:id" element={<StudentProfile />} />
-          <Route path="attendance" element={<Attendance />} />
-          <Route path="attendance/history" element={<AttendanceHistory/>}/>
-          <Route path="payments" element={<Payments />} />
-          <Route path="admin-profile" element={<AdminProfile />} />
-          <Route path="payment/history" element={<PaymentHistory />} />
-          <Route path='forgot-password' element={<ForgotPassword/>}/>
+        <Route element={<ProtectedRoute/>}>
+          {/* Main Pages */}
+          <Route path="/" element={<MainLayout />}>
+            <Route index element={<Dashboard />} />
+            <Route path="students" element={<Students />} />
+            <Route path="students/add" element={<AddStudent />} />
+            <Route path="students/profile/:id" element={<StudentProfile />} />
+            <Route path="attendance" element={<Attendance />} />
+            <Route path="attendance/history" element={<AttendanceHistory/>}/>
+            <Route path="payments" element={<Payments />} />
+            <Route path="admin-profile" element={<AdminProfile />} />
+            <Route path="payment/history" element={<PaymentHistory />} />
+          </Route>
         </Route>
       </Routes>
     </Router>

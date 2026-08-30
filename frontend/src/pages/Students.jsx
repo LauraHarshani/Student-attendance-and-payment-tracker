@@ -42,23 +42,23 @@ export default function Students() {
         paymentsData = Array.isArray(payJson) ? payJson : (payJson.payments || payJson.data || []);
       }
 
-      // Get current system year and month for dynamic checking
+      // Get current system month and year as a string (e.g., "August 2026")
       const now = new Date();
-      const currentYear = now.getFullYear();
-      const currentMonthNum = now.getMonth();
+      const currentMonthString = now.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
 
-      // 3. Combine Data: Automatically set "Paid" if a payment exists for the CURRENT month, otherwise "Pending"
+      // 3. Combine Data: Automatically set "Paid" if a payment exists for the EXACT current month string, otherwise "Pending"
       const updatedStudents = studentsData.map(student => {
+        // Find all payments belonging to this specific student
         const studentPayments = paymentsData.filter(pay => 
           String(pay.idNumber) === String(student.idNumber) || 
           String(pay.studentId) === String(student.idNumber) ||
           String(pay.student) === String(student._id)
         );
 
-        // Check if any payment falls in the current year and month
+        // STRICT FILTERING: Check if any payment's 'month' field EXACTLY matches the current month string
         const paidThisMonth = studentPayments.some(pay => {
-          const pDate = new Date(pay.paymentDate || pay.createdAt);
-          return pDate.getFullYear() === currentYear && pDate.getMonth() === currentMonthNum;
+          const recordMonth = pay.month || pay.paymentMonth || "";
+          return recordMonth.trim() === currentMonthString;
         });
 
         return {

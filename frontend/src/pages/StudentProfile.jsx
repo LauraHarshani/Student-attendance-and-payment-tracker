@@ -17,7 +17,7 @@ export default function StudentProfile() {
         const token = localStorage.getItem('token');
         const headers = { 'Authorization': `Bearer ${token}` };
 
-        // 1. Fetch Student details
+        // 1. Fetch Student details from backend
         const studentRes = await fetch(`http://localhost:5000/api/students/${id}`, { headers });
         let studentData = null;
         
@@ -31,7 +31,7 @@ export default function StudentProfile() {
         }
 
         if (studentData) {
-          // 2. Fetch Attendance
+          // 2. Fetch Attendance records for the student
           const attRes = await fetch(`http://localhost:5000/api/attendance/student/${studentData.idNumber}`, { headers });
           if (attRes.ok) {
             const attData = await attRes.json();
@@ -67,10 +67,21 @@ export default function StudentProfile() {
   const absences = totalDays - presentDays;
   const attendanceRate = totalDays > 0 ? Math.round((presentDays / totalDays) * 100) + '%' : '0%';
 
-  // Calculations for Payment Summary
+  // Calculations for Payment Summary & Dynamic Monthly Reset Logic
   const sortedPayments = [...paymentRecords].sort((a, b) => new Date(b.paymentDate || b.createdAt) - new Date(a.paymentDate || a.createdAt));
-  const latestPayment = sortedPayments.length > 0 ? sortedPayments[0] : null;
-  const currentMonth = new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  
+  // Get current system year and month
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonthNum = now.getMonth(); 
+  
+  // Check if a payment has been made for the current ongoing month
+  const paymentThisMonth = sortedPayments.find(p => {
+    const pDate = new Date(p.paymentDate || p.createdAt);
+    return pDate.getFullYear() === currentYear && pDate.getMonth() === currentMonthNum;
+  });
+
+  const currentMonth = now.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
 
   const formatDate = (dateString) => {
     if (!dateString || dateString === 'N/A') return 'N/A';
@@ -92,14 +103,16 @@ export default function StudentProfile() {
     totalDays: totalDays,
     absences: absences,
     
-    paymentStatus: latestPayment ? (latestPayment.status || 'Paid') : (student.payment || 'Pending'),
-    paidDate: latestPayment ? formatDate(latestPayment.paymentDate || latestPayment.createdAt) : '-',
-    amount: latestPayment ? `LKR ${Number(latestPayment.amount || 0).toLocaleString()}` : 'LKR 0'
+    // Set payment status to 'Paid' if paid for this month, otherwise automatically switch to 'Pending'
+    paymentStatus: paymentThisMonth ? (paymentThisMonth.status || 'Paid') : 'Pending',
+    paidDate: paymentThisMonth ? formatDate(paymentThisMonth.paymentDate || paymentThisMonth.createdAt) : '-',
+    amount: paymentThisMonth ? `LKR ${Number(paymentThisMonth.amount || 0).toLocaleString()}` : 'LKR 0'
   };
 
   return (
     <div className="flex flex-col h-full bg-white rounded-2xl p-8 shadow-sm overflow-y-auto">
       
+      {/* Header Section */}
       <div className="mb-6 flex-shrink-0">
         <h2 className="text-3xl font-extrabold text-black mb-1">Profile</h2>
         <p className="text-gray-500 text-sm">
@@ -111,6 +124,7 @@ export default function StudentProfile() {
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 pb-6">
         
+        {/* Left Column: Student Details Card */}
         <div className="lg:col-span-6 bg-[#F8F9FA] rounded-2xl p-6 border border-gray-200 flex flex-col items-center">
           <div className="w-24 h-24 rounded-full border-2 border-gray-400 flex items-center justify-center bg-gray-100 text-gray-500 mb-5 shadow-inner">
             <User size={52} strokeWidth={1.5} />
@@ -141,8 +155,10 @@ export default function StudentProfile() {
           </div>
         </div>
 
+        {/* Right Column: Attendance and Payment Summaries */}
         <div className="lg:col-span-6 flex flex-col gap-8">
           
+          {/* Attendance Summary Widget */}
           <div className="bg-[#F8F9FA] rounded-2xl p-6 border border-gray-200">
             <h3 className="text-lg font-bold text-gray-800 mb-4">Attendance Summary</h3>
             <div className="bg-white rounded-xl p-5 border border-gray-200 mb-4 flex items-center justify-between shadow-sm">
@@ -165,6 +181,7 @@ export default function StudentProfile() {
             </div>
           </div>
 
+          {/* Payment Summary Widget */}
           <div className="bg-[#F8F9FA] rounded-2xl p-6 border border-gray-200 flex flex-col justify-between">
             <h3 className="text-lg font-bold text-gray-800 mb-4">Payment Summary</h3>
             <div className="py-2 mb-4">

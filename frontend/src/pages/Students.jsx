@@ -34,7 +34,7 @@ export default function Students() {
         studentsData = await studentRes.json();
       }
 
-      // 2. Fetch Payments to cross-check automatically
+      // 2. Fetch Payments to check monthly records
       const paymentRes = await fetch('http://localhost:5000/api/payments', { headers });
       let paymentsData = [];
       if (paymentRes.ok) {
@@ -42,16 +42,28 @@ export default function Students() {
         paymentsData = Array.isArray(payJson) ? payJson : (payJson.payments || payJson.data || []);
       }
 
-      // 3. Combine Data: Automatically set "Paid" if a payment record exists
+      // Get current system year and month for dynamic checking
+      const now = new Date();
+      const currentYear = now.getFullYear();
+      const currentMonthNum = now.getMonth();
+
+      // 3. Combine Data: Automatically set "Paid" if a payment exists for the CURRENT month, otherwise "Pending"
       const updatedStudents = studentsData.map(student => {
-        const hasPaid = paymentsData.some(pay => 
+        const studentPayments = paymentsData.filter(pay => 
           String(pay.idNumber) === String(student.idNumber) || 
           String(pay.studentId) === String(student.idNumber) ||
           String(pay.student) === String(student._id)
         );
+
+        // Check if any payment falls in the current year and month
+        const paidThisMonth = studentPayments.some(pay => {
+          const pDate = new Date(pay.paymentDate || pay.createdAt);
+          return pDate.getFullYear() === currentYear && pDate.getMonth() === currentMonthNum;
+        });
+
         return {
           ...student,
-          displayPayment: hasPaid ? 'Paid' : (student.payment || 'Pending')
+          displayPayment: paidThisMonth ? 'Paid' : 'Pending'
         };
       });
 

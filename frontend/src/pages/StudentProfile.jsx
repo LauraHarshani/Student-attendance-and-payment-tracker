@@ -70,18 +70,25 @@ export default function StudentProfile() {
   // Calculations for Payment Summary & Dynamic Monthly Reset Logic
   const sortedPayments = [...paymentRecords].sort((a, b) => new Date(b.paymentDate || b.createdAt) - new Date(a.paymentDate || a.createdAt));
   
-  // Get current system year and month
   const now = new Date();
-  const currentYear = now.getFullYear();
-  const currentMonthNum = now.getMonth(); 
   
-  // Check if a payment has been made for the current ongoing month
-  const paymentThisMonth = sortedPayments.find(p => {
-    const pDate = new Date(p.paymentDate || p.createdAt);
-    return pDate.getFullYear() === currentYear && pDate.getMonth() === currentMonthNum;
+  // Get current system month and year as a string (e.g., "August 2026")
+  const currentMonthString = now.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+
+  // STRICT FILTERING: Only match payments where the 'month' field EXACTLY matches the current month string.
+  // This prevents payments for older months (like June) entered today from appearing in the current month's total.
+  const paymentsThisMonth = sortedPayments.filter(p => {
+    // Check both potential field names for robustness
+    const recordMonth = p.month || p.paymentMonth || ""; 
+    return recordMonth.trim() === currentMonthString; 
   });
 
-  const currentMonth = now.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  const hasPaid = paymentsThisMonth.length > 0;
+  
+  // Calculate the total payment amount for the current month (handles multiple payments accurately)
+  const totalMonthlyAmount = paymentsThisMonth.reduce((sum, p) => sum + Number(p.amount || 0), 0);
+
+  const currentMonth = currentMonthString;
 
   const formatDate = (dateString) => {
     if (!dateString || dateString === 'N/A') return 'N/A';
@@ -103,10 +110,12 @@ export default function StudentProfile() {
     totalDays: totalDays,
     absences: absences,
     
-    // Set payment status to 'Paid' if paid for this month, otherwise automatically switch to 'Pending'
-    paymentStatus: paymentThisMonth ? (paymentThisMonth.status || 'Paid') : 'Pending',
-    paidDate: paymentThisMonth ? formatDate(paymentThisMonth.paymentDate || paymentThisMonth.createdAt) : '-',
-    amount: paymentThisMonth ? `LKR ${Number(paymentThisMonth.amount || 0).toLocaleString()}` : 'LKR 0'
+    // Display 'Paid' if any valid payments exist for this month, otherwise 'Pending'
+    paymentStatus: hasPaid ? (paymentsThisMonth[0].status || 'Paid') : 'Pending',
+    // Show the date of the most recent payment specifically for this month
+    paidDate: hasPaid ? formatDate(paymentsThisMonth[0].paymentDate || paymentsThisMonth[0].createdAt) : '-',
+    // Show the strictly calculated total amount for this month
+    amount: hasPaid ? `LKR ${totalMonthlyAmount.toLocaleString()}` : 'LKR 0'
   };
 
   return (

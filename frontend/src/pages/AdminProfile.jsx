@@ -7,20 +7,13 @@ import {
 
 export default function AdminProfile() {
 
-  // --------------------------------------------------
-  // ADMIN PROFILE
-  // --------------------------------------------------
-
   const [adminData, setAdminData] = useState({
     name: "",
     username: "",
     email: ""
   });
 
-
-  // --------------------------------------------------
   // LOADING PROFILE
-  // --------------------------------------------------
 
   const [profileLoading, setProfileLoading] = useState(true);
 
@@ -28,17 +21,13 @@ export default function AdminProfile() {
   const [profileError, setProfileError] = useState("");
 
 
-  // --------------------------------------------------
   // CHANGE PASSWORD POPUP
-  // --------------------------------------------------
 
   const [showPasswordPopup, setShowPasswordPopup] =
     useState(false);
 
 
-  // --------------------------------------------------
   // PASSWORD VISIBILITY
-  // --------------------------------------------------
 
   const [showCurrentPassword, setShowCurrentPassword] =
     useState(false);
@@ -50,9 +39,7 @@ export default function AdminProfile() {
     useState(false);
 
 
-  // --------------------------------------------------
   // PASSWORD DATA
-  // --------------------------------------------------
 
   const [passwordData, setPasswordData] = useState({
     currentPassword: "",
@@ -61,9 +48,7 @@ export default function AdminProfile() {
   });
 
 
-  // --------------------------------------------------
   // PASSWORD ERROR / SUCCESS
-  // --------------------------------------------------
 
   const [error, setError] = useState("");
 
@@ -72,9 +57,7 @@ export default function AdminProfile() {
   const [loading, setLoading] = useState(false);
 
 
-  // ==================================================
   // GET ADMIN PROFILE FROM MONGODB
-  // ==================================================
 
   useEffect(() => {
 
@@ -151,9 +134,7 @@ export default function AdminProfile() {
   }, []);
 
 
-  // ==================================================
   // OPEN PASSWORD POPUP
-  // ==================================================
 
   const openPasswordPopup = () => {
 
@@ -176,9 +157,7 @@ export default function AdminProfile() {
   };
 
 
-  // ==================================================
   // CLOSE PASSWORD POPUP
-  // ==================================================
 
   const closePasswordPopup = () => {
 
@@ -199,9 +178,7 @@ export default function AdminProfile() {
   };
 
 
-  // ==================================================
   // PASSWORD INPUT
-  // ==================================================
 
   const handlePasswordChange = (e) => {
 
@@ -223,9 +200,7 @@ export default function AdminProfile() {
   };
 
 
-  // ==================================================
   // UPDATE PASSWORD
-  // ==================================================
 
   const handleUpdatePassword = async () => {
 
@@ -367,9 +342,7 @@ export default function AdminProfile() {
   };
 
 
-  // ==================================================
   // PROFILE LOADING
-  // ==================================================
 
   if (profileLoading) {
 
@@ -417,9 +390,7 @@ export default function AdminProfile() {
   }
 
 
-  // ==================================================
   // PROFILE ERROR
-  // ==================================================
 
   if (profileError) {
 
@@ -470,18 +441,14 @@ export default function AdminProfile() {
   }
 
 
-  // ==================================================
   // PAGE
-  // ==================================================
 
   return (
 
     <div className="space-y-8">
 
 
-      {/* ============================================ */}
       {/* PAGE HEADER */}
-      {/* ============================================ */}
 
       <div>
 
@@ -496,9 +463,7 @@ export default function AdminProfile() {
       </div>
 
 
-      {/* ============================================ */}
       {/* PROFILE CARD */}
-      {/* ============================================ */}
 
       <div className="
         mx-auto
@@ -575,9 +540,7 @@ export default function AdminProfile() {
         </div>
 
 
-        {/* ========================================== */}
         {/* PROFILE DETAILS */}
-        {/* ========================================== */}
 
         <div className="
           mx-auto
@@ -751,9 +714,7 @@ export default function AdminProfile() {
       </div>
 
 
-      {/* ================================================= */}
       {/* CHANGE PASSWORD POPUP */}
-      {/* ================================================= */}
 
       {showPasswordPopup && (
 

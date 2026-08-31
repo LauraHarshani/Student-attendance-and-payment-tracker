@@ -125,7 +125,7 @@ export default function PaymentHistory() {
       (student) => student.idNumber === idNumber
     );
 
-    return student?.name || "Unknown Student";
+    return student?.name || "Deleted Student";
   };
 
   // Format date
